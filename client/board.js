@@ -19,6 +19,9 @@
   const themeToggle = document.getElementById('themeToggle');
   const themeBadge = document.getElementById('themeBadge');
   const languageSelect = document.getElementById('languageSelect');
+  const playerColorEl = document.getElementById('playerColor');
+  const visualModeSelect = document.getElementById('visualModeSelect');
+  const visualModeBadge = document.getElementById('visualModeBadge');
 
   const restartBtn = document.getElementById('restartBtn');
   const exportPgnBtn = document.getElementById('exportPgnBtn');
@@ -54,6 +57,8 @@
     mode: 'local',
     theme: 'dark',
     language: 'en',
+    aiColor: 'white',
+    visualMode: 'indian',
     selected: null,
     legalTargets: [],
     lastInfo: '',
@@ -70,6 +75,7 @@
 
   const THEME_KEY = 'chess-arena-theme';
   const LANG_KEY = 'chess-arena-language';
+  const VISUAL_MODE_KEY = 'chess-arena-visual-mode';
   const translations = {
     en: {
       heroEyebrow: 'Strategic Match Room',
@@ -85,11 +91,16 @@
       turn: 'Turn',
       moves: 'Moves',
       theme: 'Theme',
+      visualMode: 'Visual Mode',
       matchSetup: 'Match Setup',
       modeLocal: 'Player vs Player (Local)',
       modeAi: 'Player vs AI',
       modeOnline: 'Online Multiplayer',
       aiDepth: 'AI Depth',
+      yourColor: 'Your Color',
+      visualModern: 'Modern',
+      visualIndian: 'Indian',
+      visualPersian: 'Persian',
       timer: 'Timer',
       timerNone: 'No Timer',
       timerBlitz: 'Blitz (5+0)',
@@ -138,6 +149,9 @@
       languageSpanish: 'Spanish',
       themeDark: 'Dark',
       themeLight: 'Light',
+      visualBadgeModern: 'Modern',
+      visualBadgeIndian: 'Indian',
+      visualBadgePersian: 'Persian',
       initializing: 'Initializing...',
       localMatch: 'Local Match',
       vsAi: 'Vs AI',
@@ -199,11 +213,16 @@
       turn: 'चाल',
       moves: 'चालें',
       theme: 'थीम',
+      visualMode: 'दृश्य मोड',
       matchSetup: 'मैच सेटअप',
       modeLocal: 'प्लेयर बनाम प्लेयर (लोकल)',
       modeAi: 'प्लेयर बनाम AI',
       modeOnline: 'ऑनलाइन मल्टीप्लेयर',
       aiDepth: 'AI गहराई',
+      yourColor: 'आपका रंग',
+      visualModern: 'मॉडर्न',
+      visualIndian: 'भारतीय',
+      visualPersian: 'फ़ारसी',
       timer: 'टाइमर',
       timerNone: 'कोई टाइमर नहीं',
       timerBlitz: 'ब्लिट्ज (5+0)',
@@ -252,6 +271,9 @@
       languageSpanish: 'स्पैनिश',
       themeDark: 'डार्क',
       themeLight: 'लाइट',
+      visualBadgeModern: 'मॉडर्न',
+      visualBadgeIndian: 'भारतीय',
+      visualBadgePersian: 'फ़ारसी',
       initializing: 'शुरू हो रहा है...',
       localMatch: 'लोकल मैच',
       vsAi: 'AI के खिलाफ',
@@ -313,11 +335,16 @@
       turn: 'Turno',
       moves: 'Movimientos',
       theme: 'Tema',
+      visualMode: 'Modo visual',
       matchSetup: 'Configuración de partida',
       modeLocal: 'Jugador vs Jugador (Local)',
       modeAi: 'Jugador vs IA',
       modeOnline: 'Multijugador en línea',
       aiDepth: 'Profundidad IA',
+      yourColor: 'Tu color',
+      visualModern: 'Moderno',
+      visualIndian: 'Indio',
+      visualPersian: 'Persa',
       timer: 'Temporizador',
       timerNone: 'Sin temporizador',
       timerBlitz: 'Blitz (5+0)',
@@ -366,6 +393,9 @@
       languageSpanish: 'Español',
       themeDark: 'Oscuro',
       themeLight: 'Claro',
+      visualBadgeModern: 'Moderno',
+      visualBadgeIndian: 'Indio',
+      visualBadgePersian: 'Persa',
       initializing: 'Iniciando...',
       localMatch: 'Partida local',
       vsAi: 'Vs IA',
@@ -457,12 +487,34 @@
     return translations[browserLang] ? browserLang : 'en';
   }
 
+  function getPreferredVisualMode() {
+    const stored = window.localStorage.getItem(VISUAL_MODE_KEY);
+    if (stored === 'modern' || stored === 'indian' || stored === 'persian') return stored;
+    return 'indian';
+  }
+
+  function visualModeLabel(mode = state.visualMode) {
+    if (mode === 'modern') return t('visualBadgeModern');
+    if (mode === 'persian') return t('visualBadgePersian');
+    return t('visualBadgeIndian');
+  }
+
   function applyLanguage(language) {
     state.language = translations[language] ? language : 'en';
     if (languageSelect) languageSelect.value = state.language;
     window.localStorage.setItem(LANG_KEY, state.language);
     applyTranslations();
+    if (visualModeBadge) visualModeBadge.textContent = visualModeLabel();
     updateRoomInfo();
+    render();
+  }
+
+  function applyVisualMode(mode) {
+    state.visualMode = mode === 'modern' || mode === 'persian' ? mode : 'indian';
+    document.body.dataset.visualMode = state.visualMode;
+    if (visualModeSelect) visualModeSelect.value = state.visualMode;
+    if (visualModeBadge) visualModeBadge.textContent = visualModeLabel();
+    window.localStorage.setItem(VISUAL_MODE_KEY, state.visualMode);
     render();
   }
 
@@ -623,6 +675,7 @@
     if (modeBadge) modeBadge.textContent = modeLabel();
     if (moveCount) moveCount.textContent = String(state.game?.moves?.length || 0);
     if (themeBadge) themeBadge.textContent = state.theme === 'dark' ? t('themeDark') : t('themeLight');
+    if (visualModeBadge) visualModeBadge.textContent = visualModeLabel();
 
     const result = getResultStatus();
     if (turnBadge) {
@@ -663,8 +716,22 @@
 
   function isHumanTurn() {
     if (!state.game) return false;
-    if (state.mode === 'ai') return state.game.turn === 'w';
+    if (state.mode === 'ai') return state.game.turn === (state.aiColor === 'white' ? 'w' : 'b');
     return true;
+  }
+
+  function aiSide() {
+    return state.aiColor === 'white' ? 'black' : 'white';
+  }
+
+  function shouldAiMove() {
+    if (state.mode !== 'ai' || !state.game || state.game.isGameOver) return false;
+    return state.game.turn === (state.aiColor === 'white' ? 'b' : 'w');
+  }
+
+  function boardPerspective() {
+    if (state.mode === 'ai' && state.aiColor === 'black') return 'black';
+    return 'white';
   }
 
   function isMyTurnOnline() {
@@ -765,7 +832,7 @@
     else if (lm.isCheck) playTone(770, 160);
     else playTone(520, 90);
 
-    if (state.mode === 'ai' && state.game && state.game.turn === 'b' && !state.game.isGameOver) {
+    if (shouldAiMove()) {
       await runAiTurn();
     }
   }
@@ -824,7 +891,7 @@
       if (res.ok && data.ok && data.move) {
         const out = await window.Multiplayer.sendMoveAs(
           { from: data.move.from, to: data.move.to, promotion: data.move.promotion || undefined },
-          'black',
+          aiSide(),
         );
         if (out?.ok) applyServerState(out.state);
       }
@@ -854,6 +921,9 @@
     state.redoMoves = [];
     state.lastInfo = '';
     applyServerState(res.state);
+    if (shouldAiMove()) {
+      await runAiTurn();
+    }
   }
 
   async function loadFen() {
@@ -1048,9 +1118,14 @@
     boardEl.innerHTML = '';
 
     const boardData = parseFenBoard(state.game?.fen || '8/8/8/8/8/8/8/8 w - - 0 1');
+    const perspective = boardPerspective();
+    const rowOrder = perspective === 'white' ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0];
+    const colOrder = perspective === 'white' ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0];
 
-    for (let r = 0; r < 8; r += 1) {
-      for (let c = 0; c < 8; c += 1) {
+    for (let displayRow = 0; displayRow < 8; displayRow += 1) {
+      const r = rowOrder[displayRow];
+      for (let displayCol = 0; displayCol < 8; displayCol += 1) {
+        const c = colOrder[displayCol];
         const square = toSquare(r, c);
         const sq = document.createElement('div');
         sq.className = `square ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
@@ -1063,13 +1138,13 @@
         if (legal) sq.classList.add(legal.isCapture ? 'legal-capture' : 'legal');
         if (state.game?.checkedKingSquare === square) sq.classList.add('king-check');
 
-        if (c === 0) {
+        if (displayCol === 0) {
           const rankLabel = document.createElement('span');
           rankLabel.className = 'coord-rank';
           rankLabel.textContent = String(8 - r);
           sq.appendChild(rankLabel);
         }
-        if (r === 7) {
+        if (displayRow === 7) {
           const fileLabel = document.createElement('span');
           fileLabel.className = 'coord-file';
           fileLabel.textContent = FILES[c];
@@ -1087,7 +1162,7 @@
         const pieceChar = boardData[r][c];
         if (pieceChar) {
           const p = document.createElement('img');
-          p.className = 'piece';
+          p.className = `piece ${/[A-Z]/.test(pieceChar) ? 'piece-white' : 'piece-black'}`;
           p.draggable = !isGameLocked();
           p.src = PIECE_ASSETS[pieceChar] || '';
           p.alt = `${/[A-Z]/.test(pieceChar) ? t('white') : t('black')} piece`;
@@ -1147,6 +1222,15 @@
 
     await restartGame();
   });
+  playerColorEl?.addEventListener('change', async () => {
+    state.aiColor = playerColorEl.value === 'black' ? 'black' : 'white';
+    if (state.mode === 'ai') {
+      await restartGame();
+    } else {
+      render();
+    }
+  });
+  visualModeSelect?.addEventListener('change', () => applyVisualMode(visualModeSelect.value));
 
   restartBtn.addEventListener('click', restartGame);
   exportPgnBtn.addEventListener('click', exportPgn);
@@ -1211,7 +1295,9 @@
 
   (async function init() {
     applyLanguage(getPreferredLanguage());
+    applyVisualMode(getPreferredVisualMode());
     applyTheme(getPreferredTheme());
+    if (playerColorEl) playerColorEl.value = state.aiColor;
     onlineControls.style.display = 'none';
     updateRoomInfo();
     refreshBadges();

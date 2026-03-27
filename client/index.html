@@ -52,6 +52,10 @@
             <span class="chip-value" data-i18n="heritageChipValue">Ancient strategy, modern board</span>
           </div>
           <div class="hero-chip">
+            <span class="chip-label" data-i18n="visualMode">Visual Mode</span>
+            <span id="visualModeBadge" class="chip-value">Indian</span>
+          </div>
+          <div class="hero-chip">
             <span class="chip-label" data-i18n="mode">Mode</span>
             <span id="modeBadge" class="chip-value">Local Match</span>
           </div>
@@ -87,6 +91,19 @@
                 <option value="2">2</option>
                 <option value="3" selected>3</option>
                 <option value="4">4</option>
+              </select>
+            </label>
+            <label><span data-i18n="yourColor">Your Color</span>
+              <select id="playerColor">
+                <option value="white" data-i18n="white">White</option>
+                <option value="black" data-i18n="black">Black</option>
+              </select>
+            </label>
+            <label><span data-i18n="visualMode">Visual Mode</span>
+              <select id="visualModeSelect">
+                <option value="modern" data-i18n="visualModern">Modern</option>
+                <option value="indian" selected data-i18n="visualIndian">Indian</option>
+                <option value="persian" data-i18n="visualPersian">Persian</option>
               </select>
             </label>
             <label><span data-i18n="timer">Timer</span>
