@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chess Arena</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="page-glow page-glow-left"></div>
+    <div class="page-glow page-glow-right"></div>
+    <div class="app">
+      <header class="hero">
+        <div class="heritage-orb heritage-orb-left" aria-hidden="true"></div>
+        <div class="heritage-orb heritage-orb-right" aria-hidden="true"></div>
+        <div class="hero-copy">
+          <p class="eyebrow" data-i18n="heroEyebrow">Strategic Match Room</p>
+          <h1>Chess Arena</h1>
+          <p class="hero-text" data-i18n="heroText">
+            A polished chess workspace for local play, AI practice, and online rooms with a
+            cleaner tournament-style presentation.
+          </p>
+          <div class="heritage-ribbon">
+            <span class="heritage-ribbon-label" data-i18n="heritageLabel">Inspired By</span>
+            <span class="heritage-ribbon-value" data-i18n="heritageValue">Chaturanga, the ancient Indian root of chess</span>
+          </div>
+          <div class="hero-actions">
+            <label class="theme-switch" for="themeToggle">
+              <span data-i18n="darkMode">Dark Mode</span>
+              <input id="themeToggle" type="checkbox" />
+            </label>
+            <label class="language-select">
+              <span data-i18n="language">Language</span>
+              <select id="languageSelect">
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="es">Spanish</option>
+              </select>
+            </label>
+            <div class="hero-note" data-i18n="heroNote">Responsive layout, sharper spacing, and easier match controls.</div>
+          </div>
+        </div>
+        <div class="hero-meta">
+          <div class="hero-chip hero-chip-highlight">
+            <span class="chip-label" data-i18n="heritageChip">Heritage</span>
+            <span class="chip-value" data-i18n="heritageChipValue">Ancient strategy, modern board</span>
+          </div>
+          <div class="hero-chip">
+            <span class="chip-label" data-i18n="mode">Mode</span>
+            <span id="modeBadge" class="chip-value">Local Match</span>
+          </div>
+          <div class="hero-chip">
+            <span class="chip-label" data-i18n="turn">Turn</span>
+            <span id="turnBadge" class="chip-value">White to move</span>
+          </div>
+          <div class="hero-chip">
+            <span class="chip-label" data-i18n="moves">Moves</span>
+            <span id="moveCount" class="chip-value">0</span>
+          </div>
+          <div class="hero-chip">
+            <span class="chip-label" data-i18n="theme">Theme</span>
+            <span id="themeBadge" class="chip-value">Dark</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="control-strip">
+        <div class="panel control-panel">
+          <div class="panel-title" data-i18n="matchSetup">Match Setup</div>
+          <div class="control-grid">
+            <label><span data-i18n="mode">Mode</span>
+              <select id="modeSelect">
+                <option value="local" data-i18n="modeLocal">Player vs Player (Local)</option>
+                <option value="ai" data-i18n="modeAi">Player vs AI</option>
+                <option value="online" data-i18n="modeOnline">Online Multiplayer</option>
+              </select>
+            </label>
+            <label><span data-i18n="aiDepth">AI Depth</span>
+              <select id="aiDepth">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+              </select>
+            </label>
+            <label><span data-i18n="timer">Timer</span>
+              <select id="timerMode">
+                <option value="none" data-i18n="timerNone">No Timer</option>
+                <option value="blitz" data-i18n="timerBlitz">Blitz (5+0)</option>
+                <option value="rapid" selected data-i18n="timerRapid">Rapid (10+0)</option>
+              </select>
+            </label>
+            <label><span data-i18n="timerFormat">Timer Format</span>
+              <select id="timeFormat">
+                <option value="mmss" selected>mm:ss</option>
+                <option value="mmss_ms">mm:ss.t</option>
+              </select>
+            </label>
+          </div>
+          <div class="button-row">
+            <button id="restartBtn" data-i18n="restart">Restart</button>
+            <button id="undoBtn" class="button-secondary" data-i18n="undo">Undo</button>
+            <button id="redoBtn" class="button-secondary" data-i18n="redo">Redo</button>
+            <button id="drawBtn" class="button-secondary" data-i18n="offerDraw">Offer Draw</button>
+            <button id="resignBtn" class="button-danger" data-i18n="resign">Resign</button>
+            <button id="exportPgnBtn" class="button-secondary" data-i18n="exportPgn">Export PGN</button>
+          </div>
+          <div class="toggle-group">
+            <label class="toggle-row">
+              <input id="soundToggle" type="checkbox" checked />
+              <span data-i18n="moveSound">Move Sound</span>
+            </label>
+            <div class="control-hint" data-i18n="controlHint">Use `Ctrl/Cmd + Z`, `Y`, and `R` for quick actions.</div>
+          </div>
+        </div>
+
+        <div class="panel online-panel" id="onlineControls">
+          <div class="panel-title" data-i18n="onlineRoom">Online Room</div>
+          <div class="online-actions">
+            <button id="createRoomBtn" data-i18n="createRoom">Create Room</button>
+            <div class="room-join">
+              <input id="roomCodeInput" data-i18n-placeholder="roomCodePlaceholder" placeholder="Room code" maxlength="6" />
+              <button id="joinRoomBtn" class="button-secondary" data-i18n="joinRoom">Join Room</button>
+            </div>
+          </div>
+          <div id="roomInfo" class="room-info" data-i18n="offline">Offline</div>
+        </div>
+      </section>
+
+      <main class="layout">
+        <section class="board-stage">
+          <div id="blackPanel" class="player-card">
+            <div class="player-side" data-i18n="black">Black</div>
+            <div class="player-meta">
+              <div class="player-role" data-i18n="upperBoard">Upper Board</div>
+              <div id="blackTimer" class="player-clock">10:00</div>
+            </div>
+          </div>
+
+          <div class="board-shell">
+            <div class="board-header">
+            <div class="board-title-wrap">
+              <div class="board-label" data-i18n="liveBoard">Live Board</div>
+              <div class="board-subtitle" data-i18n="boardSubtitle">Focused play area with live status, clocks, and move tracking</div>
+            </div>
+            <div id="statusText" class="status-pill" data-i18n="ready">Ready</div>
+          </div>
+          <div class="board-wrap">
+            <div class="board-corner board-corner-top" aria-hidden="true"></div>
+            <div class="board-corner board-corner-bottom" aria-hidden="true"></div>
+            <div class="board-caption">
+              <span class="board-caption-main" data-i18n="boardCaptionMain">Chaturanga Legacy</span>
+              <span class="board-caption-sub" data-i18n="boardCaptionSub">Subtle Indian motifs around a modern competitive board</span>
+            </div>
+            <div id="board" class="board"></div>
+          </div>
+          <div class="board-footer">
+            <div class="board-footer-item">
+              <span class="board-footer-label" data-i18n="interaction">Interaction</span>
+              <span class="board-footer-value" data-i18n="interactionValue">Click or drag pieces</span>
+            </div>
+            <div class="board-footer-item">
+              <span class="board-footer-label" data-i18n="formats">Formats</span>
+              <span class="board-footer-value" data-i18n="formatsValue">FEN import and PGN export ready</span>
+            </div>
+            <div class="board-footer-item board-footer-item-wide">
+              <span class="board-footer-label" data-i18n="heritageFootnoteLabel">Historical Note</span>
+              <span class="board-footer-value" data-i18n="heritageFootnoteValue">The visual tone nods to Indian court geometry, carved borders, and the early spirit of Chaturanga.</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="whitePanel" class="player-card active">
+          <div class="player-side" data-i18n="white">White</div>
+            <div class="player-meta">
+              <div class="player-role" data-i18n="lowerBoard">Lower Board</div>
+              <div id="whiteTimer" class="player-clock">10:00</div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="side-panel">
+          <section class="panel status-panel">
+            <div class="panel-head">
+              <div class="panel-title" data-i18n="positionTools">Position Tools</div>
+              <div class="panel-note" data-i18n="positionToolsNote">Load custom setups or test manual input</div>
+            </div>
+            <label><span data-i18n="loadFen">Load FEN</span>
+              <input id="fenInput" data-i18n-placeholder="fenPlaceholder" placeholder="Paste FEN string" />
+            </label>
+            <button id="loadFenBtn" data-i18n="loadFen">Load FEN</button>
+            <label><span data-i18n="moveInput">Move Input</span>
+              <input id="moveInput" data-i18n-placeholder="movePlaceholder" placeholder="e2e4 or e7e8q" />
+            </label>
+            <button id="applyMoveBtn" class="button-secondary" data-i18n="applyMove">Apply Move</button>
+          </section>
+
+          <section class="panel history-panel">
+            <div class="panel-head">
+              <div class="panel-title" data-i18n="moveHistory">Move History</div>
+              <div class="panel-note" data-i18n="moveHistoryNote">PGN-ready notation</div>
+            </div>
+            <ol id="historyList" class="history"></ol>
+          </section>
+
+          <section class="panel pgn-panel">
+            <div class="panel-head">
+              <div class="panel-title">PGN</div>
+              <div class="panel-note" data-i18n="pgnNote">Export or review the full line</div>
+            </div>
+            <textarea id="pgnOutput" readonly></textarea>
+          </section>
+        </aside>
+      </main>
+    </div>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="./multiplayer.js"></script>
+    <script src="./ai.js"></script>
+    <script src="./board.js"></script>
+  </body>
+</html>
