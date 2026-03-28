@@ -1,5 +1,5 @@
 ﻿(() => {
-  const socket = io({
+  const socket = io(window.location.origin, {
     transports: ['websocket', 'polling'],
     timeout: 5000,
   });

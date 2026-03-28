@@ -21,7 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 CLIENT_DIR = os.path.join(BASE_DIR, "client")
 
 app = Flask(__name__, static_folder=CLIENT_DIR, static_url_path="")
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+socketio = SocketIO(app, cors_allowed_origins="*")
 rooms = RoomManager()
 
 
@@ -204,4 +204,4 @@ threading.Thread(target=_timer_loop, daemon=True).start()
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
-    socketio.run(app, host="0.0.0.0", port=port, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", port=port)
