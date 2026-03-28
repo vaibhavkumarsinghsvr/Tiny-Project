@@ -1,17 +1,23 @@
 # Chess Arena
 
-Chess Arena is a polished web-based chess project with local play, AI play, and online multiplayer room support. The app combines a modern interface with subtle `Chaturanga`-inspired details, multilingual UI support, move history, PGN export, FEN loading, and configurable time controls.
+Chess Arena is a polished web-based chess project with local play, AI play, training tools, and online multiplayer room support. The app combines a modern interface with subtle `Chaturanga`-inspired details, multilingual UI support, move history, PGN export, FEN loading, configurable time controls, and a more analysis-friendly match experience.
 
 ## Features
 
 - Local player vs player chess
+- Guided `Training Mode` with lesson-based coaching
 - Player vs AI with adjustable depth
+- `AI vs AI` autoplay mode
 - Online multiplayer using room codes
+- Live evaluation bar
+- Game-end summary modal with rematch flow
+- Built-in rules, notation, and trainer sidebar
 - Light and dark mode
 - Multilingual interface: English, Hindi, Spanish
 - Timer modes: `No Timer`, `Blitz`, `Rapid`
 - Move history and PGN export
 - FEN loading for custom positions
+- Opening name summary for completed games
 - Drag-and-drop or typed move input
 - Responsive UI for desktop and mobile
 
@@ -67,11 +73,25 @@ http://127.0.0.1:5000
 2. Move pieces by clicking or dragging.
 3. Use `Restart`, `Undo`, `Redo`, `Offer Draw`, or `Resign` as needed.
 
+### Training Mode
+
+1. Select `Training Mode`.
+2. Play either side on a local practice board.
+3. Read the live trainer tips in the sidebar after each move.
+4. Use the lesson navigation to move through opening, tactics, king safety, coordination, and endgame guidance.
+
 ### Vs AI
 
 1. Select `Player vs AI`.
 2. Choose an AI depth.
 3. Play as white and the AI responds as black.
+
+### AI vs AI
+
+1. Select `AI vs AI`.
+2. Choose an AI depth.
+3. Restart the game and watch both sides autoplay.
+4. Use the evaluation bar and move list to follow the balance of the game.
 
 ### Online Multiplayer
 
@@ -85,9 +105,23 @@ http://127.0.0.1:5000
 
 - Modern glassmorphism-inspired interface
 - Subtle ancient Indian design details inspired by `Chaturanga`
+- Custom SVG chess pieces for a more realistic board
 - Light and dark theme toggle
 - Language switcher
 - Live turn, move, and room status badges
+- Live evaluation bar beside the board
+- Game-end summary modal with result, move count, opening name, time used, and rematch
+- Built-in training, rules, and notation panels in the sidebar
+
+## Demo Flow
+
+If you are presenting the app, a strong 2-minute walkthrough is:
+
+1. Start in `Training Mode` and make a few opening moves to show live coaching.
+2. Switch to `Player vs AI` and point out the evaluation bar changing after each move.
+3. Load `AI vs AI` and let the game autoplay for a few moves.
+4. End a game by checkmate, resignation, or draw to show the summary modal and rematch action.
+5. Open the rules and notation panel to show the project is useful for beginners as well as demos.
 
 ## Controls
 
@@ -98,6 +132,9 @@ http://127.0.0.1:5000
 - `Export PGN`: export the game notation
 - `Load FEN`: load a custom position
 - `Move Input`: apply typed moves like `e2e4` or `e7e8q`
+- `Evaluation Bar`: shows the current balance of the position
+- `Trainer Panel`: explains lessons and gives live coaching
+- `Summary Modal`: appears automatically when a game ends
 
 Keyboard shortcuts:
 
