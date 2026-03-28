@@ -1,11 +1,8 @@
-﻿<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'>
-  <defs>
-    <radialGradient id='g' cx='35%' cy='30%' r='70%'>
-      <stop offset='0%' stop-color='#ffffff' stop-opacity='0.35'/>
-      <stop offset='100%' stop-color='#000000' stop-opacity='0.15'/>
-    </radialGradient>
-  </defs>
-  <circle cx='40' cy='40' r='31' fill='#f8fafc' stroke='#111827' stroke-width='3'/>
-  <circle cx='40' cy='40' r='31' fill='url(#g)'/>
-  <text x='40' y='51' text-anchor='middle' font-size='42' font-family='Segoe UI Symbol, Noto Sans Symbols2, Arial Unicode MS, serif' fill='#111827'>♙</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45">
+  <g fill="#f7f3ea" stroke="#2c2418" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="22.5" cy="13.5" r="5.5"/>
+    <path d="M16 36c0-6 3.5-10 6.5-10s6.5 4 6.5 10z"/>
+    <path d="M13.5 40h18"/>
+    <path d="M11.5 42h22"/>
+  </g>
 </svg>

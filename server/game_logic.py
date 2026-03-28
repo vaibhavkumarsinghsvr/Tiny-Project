@@ -57,6 +57,34 @@ def _to_pgn(board: chess.Board) -> str:
     return game.accept(exporter).strip()
 
 
+def _opening_name(board: chess.Board) -> str:
+    moves = [mv.uci() for mv in board.move_stack[:6]]
+    key = " ".join(moves)
+    openings = {
+        "e2e4 e7e5 g1f3 b8c6": "Open Game",
+        "e2e4 e7e5 g1f3 b8c6 f1b5": "Ruy Lopez",
+        "e2e4 e7e5 g1f3 b8c6 f1c4": "Italian Game",
+        "e2e4 c7c5": "Sicilian Defense",
+        "e2e4 e7e6": "French Defense",
+        "e2e4 c7c6": "Caro-Kann Defense",
+        "d2d4 d7d5 c2c4": "Queen's Gambit",
+        "d2d4 g8f6 c2c4": "Indian Defense",
+        "d2d4 g8f6 c2c4 e7e6": "Indian Game",
+        "d2d4 d7d5 g1f3": "Queen's Pawn Game",
+        "c2c4": "English Opening",
+        "g1f3": "Zukertort Opening",
+        "e2e4": "King's Pawn Opening",
+        "d2d4": "Queen's Pawn Opening",
+    }
+    while key:
+        if key in openings:
+            return openings[key]
+        key = " ".join(key.split(" ")[:-1])
+    if board.move_stack:
+        return "Uncommon Opening"
+    return "Starting Position" if board.board_fen() == chess.Board().board_fen() else "Custom Position"
+
+
 def serialize_state(game: GameState) -> Dict[str, Any]:
     board = game.board
     checked_king_square = None
@@ -68,6 +96,7 @@ def serialize_state(game: GameState) -> Dict[str, Any]:
     return {
         "fen": board.fen(),
         "pgn": _to_pgn(board),
+        "openingName": _opening_name(board),
         "turn": "w" if board.turn == chess.WHITE else "b",
         "inCheck": board.is_check(),
         "isCheckmate": board.is_checkmate(),

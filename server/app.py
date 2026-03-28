@@ -9,11 +9,11 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
 
 try:
-    from .ai_engine import best_move_from_fen
+    from .ai_engine import best_move_from_fen, evaluation_from_fen
     from .game_logic import apply_timer_tick, export_pgn, legal_moves, load_fen, restart_game, serialize_state, validate_and_apply_move
     from .rooms import RoomManager
 except ImportError:
-    from ai_engine import best_move_from_fen
+    from ai_engine import best_move_from_fen, evaluation_from_fen
     from game_logic import apply_timer_tick, export_pgn, legal_moves, load_fen, restart_game, serialize_state, validate_and_apply_move
     from rooms import RoomManager
 
@@ -40,6 +40,18 @@ def ai_move() -> Any:
         return jsonify({"ok": False, "error": "fen is required"}), 400
 
     out = best_move_from_fen(fen, depth)
+    code = 200 if out.get("ok") else 400
+    return jsonify(out), code
+
+
+@app.post("/api/evaluate")
+def evaluate() -> Any:
+    payload: Dict[str, Any] = request.get_json(silent=True) or {}
+    fen = str(payload.get("fen", "")).strip()
+    if not fen:
+        return jsonify({"ok": False, "error": "fen is required"}), 400
+
+    out = evaluation_from_fen(fen)
     code = 200 if out.get("ok") else 400
     return jsonify(out), code
 

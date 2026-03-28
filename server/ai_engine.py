@@ -132,3 +132,15 @@ def best_move_from_fen(fen: str, depth: int) -> dict:
             "san": san,
         },
     }
+
+
+def evaluation_from_fen(fen: str) -> dict:
+    try:
+        board = chess.Board(fen)
+    except ValueError:
+        return {"ok": False, "error": "Invalid FEN"}
+    score = evaluate_board(board)
+    return {
+        "ok": True,
+        "score": score,
+    }

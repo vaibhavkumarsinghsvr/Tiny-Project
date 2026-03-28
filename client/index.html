@@ -81,7 +81,9 @@
             <label><span data-i18n="mode">Mode</span>
               <select id="modeSelect">
                 <option value="local" data-i18n="modeLocal">Player vs Player (Local)</option>
+                <option value="training" data-i18n="modeTraining">Training Mode</option>
                 <option value="ai" data-i18n="modeAi">Player vs AI</option>
+                <option value="ai-vs-ai" data-i18n="modeAiVsAi">AI vs AI</option>
                 <option value="online" data-i18n="modeOnline">Online Multiplayer</option>
               </select>
             </label>
@@ -175,6 +177,12 @@
               <span class="board-caption-main" data-i18n="boardCaptionMain">Chaturanga Legacy</span>
               <span class="board-caption-sub" data-i18n="boardCaptionSub">Subtle Indian motifs around a modern competitive board</span>
             </div>
+            <div class="eval-rail" aria-label="Evaluation bar">
+              <div class="eval-bar">
+                <div id="evalFill" class="eval-fill"></div>
+              </div>
+              <div id="evalLabel" class="eval-label">0.0</div>
+            </div>
             <div id="board" class="board"></div>
           </div>
           <div class="board-footer">
@@ -233,8 +241,135 @@
             </div>
             <textarea id="pgnOutput" readonly></textarea>
           </section>
+
+          <section class="panel guide-panel">
+            <div class="panel-head">
+              <div class="panel-title" data-i18n="rulesGuideTitle">Rules & Notation</div>
+              <div class="panel-note" data-i18n="rulesGuideNote">Quick reference for piece names, legal moves, and standard notation</div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-section-title" data-i18n="rulesBasicsTitle">Game Objective</div>
+              <ul class="guide-list">
+                <li data-i18n="rulesBasics1">Checkmate the opponent's king: attack it so no legal escape remains.</li>
+                <li data-i18n="rulesBasics2">You may not leave your own king in check after a move.</li>
+                <li data-i18n="rulesBasics3">If no legal move exists and the king is not in check, the result is stalemate.</li>
+              </ul>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-section-title" data-i18n="rulesSpecialTitle">Special Rules</div>
+              <ul class="guide-list">
+                <li data-i18n="rulesSpecial1">Castling: king moves two squares toward a rook, then the rook crosses over. It is illegal if king or rook has moved, the king is in check, or the king crosses an attacked square.</li>
+                <li data-i18n="rulesSpecial2">En passant: a pawn may capture a pawn that just advanced two squares as if it moved only one.</li>
+                <li data-i18n="rulesSpecial3">Promotion: when a pawn reaches the last rank, it becomes a queen, rook, bishop, or knight.</li>
+                <li data-i18n="rulesSpecial4">Draws can occur by stalemate, threefold repetition, the fifty-move rule, agreement, or insufficient material.</li>
+              </ul>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-section-title" data-i18n="notationTitle">Notation & Piece Names</div>
+              <div class="notation-grid">
+                <div class="notation-row">
+                  <span class="notation-key" data-i18n="notationKingKey">K</span>
+                  <span class="notation-value" data-i18n="notationKingValue">King</span>
+                </div>
+                <div class="notation-row">
+                  <span class="notation-key" data-i18n="notationQueenKey">Q</span>
+                  <span class="notation-value" data-i18n="notationQueenValue">Queen</span>
+                </div>
+                <div class="notation-row">
+                  <span class="notation-key" data-i18n="notationRookKey">R</span>
+                  <span class="notation-value" data-i18n="notationRookValue">Rook</span>
+                </div>
+                <div class="notation-row">
+                  <span class="notation-key" data-i18n="notationBishopKey">B</span>
+                  <span class="notation-value" data-i18n="notationBishopValue">Bishop</span>
+                </div>
+                <div class="notation-row">
+                  <span class="notation-key" data-i18n="notationKnightKey">N</span>
+                  <span class="notation-value" data-i18n="notationKnightValue">Knight</span>
+                </div>
+                <div class="notation-row">
+                  <span class="notation-key" data-i18n="notationPawnKey">Pawn</span>
+                  <span class="notation-value" data-i18n="notationPawnValue">Pawns usually have no starting letter in notation.</span>
+                </div>
+              </div>
+              <ul class="guide-list">
+                <li data-i18n="notationRule1">Squares are named by file and rank, such as e4, a1, or h8.</li>
+                <li data-i18n="notationRule2">A simple move is written like Nf3 or e4. The x symbol means capture, as in Bxe6.</li>
+                <li data-i18n="notationRule3">Check uses +, checkmate uses #, kingside castling is O-O, and queenside castling is O-O-O.</li>
+                <li data-i18n="notationRule4">Promotion is written with =, for example e8=Q. In this app, typed move input uses coordinate notation such as e2e4 or e7e8q.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="panel trainer-panel">
+            <div class="panel-head">
+              <div class="panel-title" data-i18n="trainerTitle">Chess Trainer</div>
+              <div class="panel-note" data-i18n="trainerNote">Learn the basics step by step while you play</div>
+            </div>
+
+            <div class="trainer-nav">
+              <button id="trainerPrevBtn" class="button-secondary" data-i18n="trainerPrev">Previous</button>
+              <div id="trainerLessonCount" class="trainer-step">Lesson 1 / 5</div>
+              <button id="trainerNextBtn" class="button-secondary" data-i18n="trainerNext">Next</button>
+            </div>
+
+            <div class="trainer-card">
+              <div id="trainerLessonTitle" class="guide-section-title">Opening Principles</div>
+              <div id="trainerLessonFocus" class="trainer-focus">Control the center and develop your pieces before chasing quick attacks.</div>
+              <ul id="trainerLessonPoints" class="guide-list"></ul>
+            </div>
+
+            <div class="trainer-card">
+              <div class="guide-section-title" data-i18n="trainerCoachTitle">Live Coach</div>
+              <p id="trainerCoachText" class="trainer-coach-text">Select a piece or make a move to get a simple coaching tip.</p>
+            </div>
+          </section>
         </aside>
       </main>
+    </div>
+    <div id="summaryModal" class="summary-modal hidden" aria-hidden="true">
+      <div class="summary-backdrop"></div>
+      <div class="summary-dialog" role="dialog" aria-modal="true" aria-labelledby="summaryTitle">
+        <div class="summary-head">
+          <div>
+            <div class="panel-note">Game Summary</div>
+            <h2 id="summaryTitle">Result</h2>
+          </div>
+          <button id="summaryCloseBtn" class="button-secondary" type="button">Close</button>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <span class="summary-label">Result</span>
+            <span id="summaryResult" class="summary-value">-</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Moves</span>
+            <span id="summaryMoves" class="summary-value">0</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Opening</span>
+            <span id="summaryOpening" class="summary-value">Starting Position</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">White Time Used</span>
+            <span id="summaryWhiteTime" class="summary-value">00:00</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Black Time Used</span>
+            <span id="summaryBlackTime" class="summary-value">00:00</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Final Eval</span>
+            <span id="summaryEval" class="summary-value">0.0</span>
+          </div>
+        </div>
+        <div class="summary-actions">
+          <button id="summaryRematchBtn" type="button">Rematch</button>
+        </div>
+      </div>
     </div>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="./multiplayer.js"></script>

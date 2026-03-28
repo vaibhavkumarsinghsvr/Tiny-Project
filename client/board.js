@@ -22,6 +22,25 @@
   const playerColorEl = document.getElementById('playerColor');
   const visualModeSelect = document.getElementById('visualModeSelect');
   const visualModeBadge = document.getElementById('visualModeBadge');
+  const evalFill = document.getElementById('evalFill');
+  const evalLabel = document.getElementById('evalLabel');
+  const trainerPrevBtn = document.getElementById('trainerPrevBtn');
+  const trainerNextBtn = document.getElementById('trainerNextBtn');
+  const trainerLessonCount = document.getElementById('trainerLessonCount');
+  const trainerLessonTitle = document.getElementById('trainerLessonTitle');
+  const trainerLessonFocus = document.getElementById('trainerLessonFocus');
+  const trainerLessonPoints = document.getElementById('trainerLessonPoints');
+  const trainerCoachText = document.getElementById('trainerCoachText');
+  const summaryModal = document.getElementById('summaryModal');
+  const summaryCloseBtn = document.getElementById('summaryCloseBtn');
+  const summaryRematchBtn = document.getElementById('summaryRematchBtn');
+  const summaryTitle = document.getElementById('summaryTitle');
+  const summaryResult = document.getElementById('summaryResult');
+  const summaryMoves = document.getElementById('summaryMoves');
+  const summaryOpening = document.getElementById('summaryOpening');
+  const summaryWhiteTime = document.getElementById('summaryWhiteTime');
+  const summaryBlackTime = document.getElementById('summaryBlackTime');
+  const summaryEval = document.getElementById('summaryEval');
 
   const restartBtn = document.getElementById('restartBtn');
   const exportPgnBtn = document.getElementById('exportPgnBtn');
@@ -71,6 +90,10 @@
     forcedResult: '',
     redoMoves: [],
     localTickAt: Date.now(),
+    trainerLesson: 0,
+    evalScore: 0,
+    summaryOpen: false,
+    lastSummaryResult: '',
   };
 
   const THEME_KEY = 'chess-arena-theme';
@@ -94,7 +117,9 @@
       visualMode: 'Visual Mode',
       matchSetup: 'Match Setup',
       modeLocal: 'Player vs Player (Local)',
+      modeTraining: 'Training Mode',
       modeAi: 'Player vs AI',
+      modeAiVsAi: 'AI vs AI',
       modeOnline: 'Online Multiplayer',
       aiDepth: 'AI Depth',
       yourColor: 'Your Color',
@@ -144,6 +169,97 @@
       moveHistory: 'Move History',
       moveHistoryNote: 'PGN-ready notation',
       pgnNote: 'Export or review the full line',
+      rulesGuideTitle: 'Rules & Notation',
+      rulesGuideNote: 'Quick reference for piece names, legal moves, and standard notation',
+      rulesBasicsTitle: 'Game Objective',
+      rulesBasics1: "Checkmate the opponent's king: attack it so no legal escape remains.",
+      rulesBasics2: 'You may not leave your own king in check after a move.',
+      rulesBasics3: 'If no legal move exists and the king is not in check, the result is stalemate.',
+      rulesSpecialTitle: 'Special Rules',
+      rulesSpecial1: 'Castling: king moves two squares toward a rook, then the rook crosses over. It is illegal if king or rook has moved, the king is in check, or the king crosses an attacked square.',
+      rulesSpecial2: 'En passant: a pawn may capture a pawn that just advanced two squares as if it moved only one.',
+      rulesSpecial3: 'Promotion: when a pawn reaches the last rank, it becomes a queen, rook, bishop, or knight.',
+      rulesSpecial4: 'Draws can occur by stalemate, threefold repetition, the fifty-move rule, agreement, or insufficient material.',
+      notationTitle: 'Notation & Piece Names',
+      notationKingKey: 'K',
+      notationKingValue: 'King',
+      notationQueenKey: 'Q',
+      notationQueenValue: 'Queen',
+      notationRookKey: 'R',
+      notationRookValue: 'Rook',
+      notationBishopKey: 'B',
+      notationBishopValue: 'Bishop',
+      notationKnightKey: 'N',
+      notationKnightValue: 'Knight',
+      notationPawnKey: 'Pawn',
+      notationPawnValue: 'Pawns usually have no starting letter in notation.',
+      notationRule1: 'Squares are named by file and rank, such as e4, a1, or h8.',
+      notationRule2: 'A simple move is written like Nf3 or e4. The x symbol means capture, as in Bxe6.',
+      notationRule3: 'Check uses +, checkmate uses #, kingside castling is O-O, and queenside castling is O-O-O.',
+      notationRule4: 'Promotion is written with =, for example e8=Q. In this app, typed move input uses coordinate notation such as e2e4 or e7e8q.',
+      trainerTitle: 'Chess Trainer',
+      trainerNote: 'Learn the basics step by step while you play',
+      trainerPrev: 'Previous',
+      trainerNext: 'Next',
+      trainerCoachTitle: 'Live Coach',
+      trainerWaiting: 'The trainer will start giving advice as soon as the board is ready.',
+      trainerLessonCount: 'Lesson {current} / {total}',
+      trainerLesson1Title: 'Opening Principles',
+      trainerLesson1Focus: 'Control the center and develop your pieces before chasing quick attacks.',
+      trainerLesson1Point1: 'Try to influence central squares like e4, d4, e5, and d5.',
+      trainerLesson1Point2: 'Bring knights and bishops out early so your pieces can work together.',
+      trainerLesson1Point3: 'Avoid moving the same piece repeatedly in the opening without a reason.',
+      trainerLesson2Title: 'King Safety',
+      trainerLesson2Focus: 'Castle early and keep pawns near your king from falling apart for no reason.',
+      trainerLesson2Point1: 'Castling usually connects your rooks and moves the king away from the center.',
+      trainerLesson2Point2: 'Before opening files near your own king, check whether the opponent can attack.',
+      trainerLesson2Point3: 'A safe king lets the rest of your army play more confidently.',
+      trainerLesson3Title: 'Tactics First',
+      trainerLesson3Focus: 'Before every move, look for checks, captures, and threats for both sides.',
+      trainerLesson3Point1: 'Checks are forcing, so always see whether one side has a check available.',
+      trainerLesson3Point2: 'Loose pieces are often tactical targets because they are undefended.',
+      trainerLesson3Point3: 'If you attack something, ask whether your opponent has an even stronger reply.',
+      trainerLesson4Title: 'Piece Coordination',
+      trainerLesson4Focus: 'Strong moves make multiple pieces support each other instead of acting alone.',
+      trainerLesson4Point1: 'Rooks love open files, bishops love long diagonals, and knights love stable outposts.',
+      trainerLesson4Point2: 'Try to improve your worst-placed piece instead of moving a good one again.',
+      trainerLesson4Point3: 'When pieces protect each other, tactics become safer and stronger.',
+      trainerLesson5Title: 'Endgame Habits',
+      trainerLesson5Focus: 'In simpler positions, activate your king and push passed pawns with care.',
+      trainerLesson5Point1: 'The king becomes a fighting piece in the endgame and should move toward the action.',
+      trainerLesson5Point2: 'Passed pawns are powerful because they force the opponent to respond.',
+      trainerLesson5Point3: 'In races, calculate carefully and do not give checks that waste tempi.',
+      trainerPieceKing: 'king',
+      trainerPieceQueen: 'queen',
+      trainerPieceRook: 'rook',
+      trainerPieceBishop: 'bishop',
+      trainerPieceKnight: 'knight',
+      trainerPiecePawn: 'pawn',
+      trainerCoachSelected: 'You selected the {piece} on {square}. It currently has {count} legal move(s), so compare the safest square with the most active one.',
+      trainerCoachTurn: 'It is {color} to move. Start by checking forcing ideas: checks, captures, and direct threats.',
+      trainerCoachOpening: 'The opening is still young. Focus on center control, development, and king safety over early queen adventures.',
+      trainerCoachLastMove: 'The last move was {from} to {to}. Ask what changed: new attacks, new weaknesses, or a newly opened line.',
+      trainerCoachCheck: 'A king is in check. When that happens, the priority is escape: move the king, block the line, or capture the attacker.',
+      trainerCoachEnd: 'The game result is {result}. Review the final sequence and look for the move where the balance changed.',
+      trainerCoachAiBattle: 'In AI vs AI mode, watch how each side develops and compare whose king becomes safer first.',
+      trainerCoachVsAi: 'Against the AI, try to explain your move in words before you play it. A plan is better than a random legal move.',
+      trainerCoachCapture: 'A capture just happened. Make sure the capturing piece is not walking into a stronger reply.',
+      trainerCoachTraining: 'Training mode is active. Play both sides if you want, test ideas, and use each move as a lesson in development, king safety, and tactics.',
+      trainerMoveCheck: 'Training tip: a checking move is forcing. Ask whether it improved your position or only looked active.',
+      trainerMoveCapture: 'Training tip: after every capture, count attackers and defenders before assuming the trade is good.',
+      trainerMoveCenter: 'Training tip: central moves often increase space and piece activity. Check whether they also weaken something.',
+      trainerMoveCastle: 'Training tip: castling usually improves king safety and brings a rook toward the center.',
+      trainerMoveQuiet: 'Training tip: explain this move in one sentence. If you can name its purpose, your plan is getting clearer.',
+      summaryGame: 'Game Summary',
+      summaryClose: 'Close',
+      summaryRematch: 'Rematch',
+      summaryResultLabel: 'Result',
+      summaryMovesLabel: 'Moves',
+      summaryOpeningLabel: 'Opening',
+      summaryWhiteTimeLabel: 'White Time Used',
+      summaryBlackTimeLabel: 'Black Time Used',
+      summaryEvalLabel: 'Final Eval',
+      summaryUnknownOpening: 'Unclassified Opening',
       languageEnglish: 'English',
       languageHindi: 'Hindi',
       languageSpanish: 'Spanish',
@@ -154,7 +270,9 @@
       visualBadgePersian: 'Persian',
       initializing: 'Initializing...',
       localMatch: 'Local Match',
+      trainingModeShort: 'Training',
       vsAi: 'Vs AI',
+      aiBattle: 'AI Battle',
       onlineRoomShort: 'Online Room',
       whiteToMove: 'White to move',
       blackToMove: 'Black to move',
@@ -216,7 +334,9 @@
       visualMode: 'दृश्य मोड',
       matchSetup: 'मैच सेटअप',
       modeLocal: 'प्लेयर बनाम प्लेयर (लोकल)',
+      modeTraining: 'ट्रेनिंग मोड',
       modeAi: 'प्लेयर बनाम AI',
+      modeAiVsAi: 'AI बनाम AI',
       modeOnline: 'ऑनलाइन मल्टीप्लेयर',
       aiDepth: 'AI गहराई',
       yourColor: 'आपका रंग',
@@ -266,6 +386,34 @@
       moveHistory: 'मूव हिस्ट्री',
       moveHistoryNote: 'PGN के लिए तैयार नोटेशन',
       pgnNote: 'पूरी लाइन देखें या एक्सपोर्ट करें',
+      rulesGuideTitle: 'नियम और नोटेशन',
+      rulesGuideNote: 'पीस के नाम, चाल के नियम और मानक नोटेशन के लिए त्वरित संदर्भ',
+      rulesBasicsTitle: 'खेल का उद्देश्य',
+      rulesBasics1: 'प्रतिद्वंदी के राजा को चेकमेट करें, यानी उस पर ऐसा हमला करें कि कोई वैध बचाव न बचे।',
+      rulesBasics2: 'आप अपनी चाल के बाद अपने राजा को चेक में नहीं छोड़ सकते।',
+      rulesBasics3: 'यदि कोई वैध चाल न बचे और राजा चेक में न हो, तो परिणाम स्टेलमेट होता है।',
+      rulesSpecialTitle: 'विशेष नियम',
+      rulesSpecial1: 'कास्टलिंग: राजा हाथी की ओर दो घर चलता है और हाथी राजा के पार आ जाता है। यह तब अवैध है जब राजा या हाथी पहले चल चुके हों, राजा चेक में हो, या राजा किसी आक्रमित घर से गुजरे।',
+      rulesSpecial2: 'एन पसां: यदि प्रतिद्वंदी का प्यादा दो घर आगे बढ़े, तो पास वाला प्यादा उसे ऐसे मार सकता है जैसे वह एक ही घर चला हो।',
+      rulesSpecial3: 'प्रमोशन: प्यादा अंतिम रैंक पर पहुँचते ही क्वीन, रूख, बिशप या नाइट बन सकता है।',
+      rulesSpecial4: 'ड्रॉ स्टेलमेट, तीन बार दोहराव, पचास-चाल नियम, आपसी सहमति, या अपर्याप्त सामग्री से हो सकता है।',
+      notationTitle: 'नोटेशन और पीस के नाम',
+      notationKingKey: 'K',
+      notationKingValue: 'King',
+      notationQueenKey: 'Q',
+      notationQueenValue: 'Queen',
+      notationRookKey: 'R',
+      notationRookValue: 'Rook',
+      notationBishopKey: 'B',
+      notationBishopValue: 'Bishop',
+      notationKnightKey: 'N',
+      notationKnightValue: 'Knight',
+      notationPawnKey: 'Pawn',
+      notationPawnValue: 'प्यादों के लिए आम तौर पर शुरुआती अक्षर नहीं लिखा जाता।',
+      notationRule1: 'खानों के नाम file और rank से बनते हैं, जैसे e4, a1, या h8।',
+      notationRule2: 'साधारण चाल Nf3 या e4 जैसी लिखी जाती है। x का अर्थ capture है, जैसे Bxe6।',
+      notationRule3: 'चेक के लिए +, चेकमेट के लिए #, kingside castling के लिए O-O, और queenside castling के लिए O-O-O लिखा जाता है।',
+      notationRule4: 'प्रमोशन = से लिखा जाता है, जैसे e8=Q। इस ऐप में typed move input coordinate notation जैसे e2e4 या e7e8q का उपयोग करता है।',
       languageEnglish: 'अंग्रेज़ी',
       languageHindi: 'हिंदी',
       languageSpanish: 'स्पैनिश',
@@ -276,7 +424,9 @@
       visualBadgePersian: 'फ़ारसी',
       initializing: 'शुरू हो रहा है...',
       localMatch: 'लोकल मैच',
+      trainingModeShort: 'ट्रेनिंग',
       vsAi: 'AI के खिलाफ',
+      aiBattle: 'AI मुकाबला',
       onlineRoomShort: 'ऑनलाइन रूम',
       whiteToMove: 'सफेद की चाल',
       blackToMove: 'काले की चाल',
@@ -338,7 +488,9 @@
       visualMode: 'Modo visual',
       matchSetup: 'Configuración de partida',
       modeLocal: 'Jugador vs Jugador (Local)',
+      modeTraining: 'Modo entrenamiento',
       modeAi: 'Jugador vs IA',
+      modeAiVsAi: 'IA vs IA',
       modeOnline: 'Multijugador en línea',
       aiDepth: 'Profundidad IA',
       yourColor: 'Tu color',
@@ -388,6 +540,34 @@
       moveHistory: 'Historial de movimientos',
       moveHistoryNote: 'Notación lista para PGN',
       pgnNote: 'Exporta o revisa la línea completa',
+      rulesGuideTitle: 'Reglas y notación',
+      rulesGuideNote: 'Referencia rápida sobre nombres de piezas, movimientos legales y notación estándar',
+      rulesBasicsTitle: 'Objetivo del juego',
+      rulesBasics1: 'Haz jaque mate al rey rival: atácalo de forma que no quede ninguna salida legal.',
+      rulesBasics2: 'No puedes terminar una jugada dejando a tu propio rey en jaque.',
+      rulesBasics3: 'Si no existe ningún movimiento legal y el rey no está en jaque, el resultado es tablas por ahogado.',
+      rulesSpecialTitle: 'Reglas especiales',
+      rulesSpecial1: 'Enroque: el rey se mueve dos casillas hacia una torre y luego la torre cruza al otro lado. Es ilegal si el rey o la torre ya se movieron, si el rey está en jaque o si cruza una casilla atacada.',
+      rulesSpecial2: 'Captura al paso: un peón puede capturar a un peón que acaba de avanzar dos casillas como si solo hubiera avanzado una.',
+      rulesSpecial3: 'Promoción: cuando un peón llega a la última fila, se convierte en dama, torre, alfil o caballo.',
+      rulesSpecial4: 'Las tablas pueden ocurrir por ahogado, triple repetición, regla de cincuenta movimientos, acuerdo o material insuficiente.',
+      notationTitle: 'Notación y nombres de piezas',
+      notationKingKey: 'K',
+      notationKingValue: 'Rey',
+      notationQueenKey: 'Q',
+      notationQueenValue: 'Dama',
+      notationRookKey: 'R',
+      notationRookValue: 'Torre',
+      notationBishopKey: 'B',
+      notationBishopValue: 'Alfil',
+      notationKnightKey: 'N',
+      notationKnightValue: 'Caballo',
+      notationPawnKey: 'Peón',
+      notationPawnValue: 'Los peones normalmente no llevan letra inicial en la notación.',
+      notationRule1: 'Las casillas se nombran por columna y fila, como e4, a1 o h8.',
+      notationRule2: 'Un movimiento simple se escribe como Nf3 o e4. El símbolo x indica captura, como en Bxe6.',
+      notationRule3: 'El jaque usa +, el jaque mate usa #, el enroque corto es O-O y el enroque largo es O-O-O.',
+      notationRule4: 'La promoción se escribe con =, por ejemplo e8=Q. En esta app, la entrada manual usa notación por coordenadas como e2e4 o e7e8q.',
       languageEnglish: 'Inglés',
       languageHindi: 'Hindi',
       languageSpanish: 'Español',
@@ -398,7 +578,9 @@
       visualBadgePersian: 'Persa',
       initializing: 'Iniciando...',
       localMatch: 'Partida local',
+      trainingModeShort: 'Entrenamiento',
       vsAi: 'Vs IA',
+      aiBattle: 'Duelo IA',
       onlineRoomShort: 'Sala en línea',
       whiteToMove: 'Juegan blancas',
       blackToMove: 'Juegan negras',
@@ -458,6 +640,69 @@
     if (color === 'white') return t('whiteColor');
     if (color === 'black') return t('blackColor');
     return t('spectator');
+  }
+
+  function trainerLessons() {
+    return [
+      {
+        title: t('trainerLesson1Title'),
+        focus: t('trainerLesson1Focus'),
+        points: [t('trainerLesson1Point1'), t('trainerLesson1Point2'), t('trainerLesson1Point3')],
+      },
+      {
+        title: t('trainerLesson2Title'),
+        focus: t('trainerLesson2Focus'),
+        points: [t('trainerLesson2Point1'), t('trainerLesson2Point2'), t('trainerLesson2Point3')],
+      },
+      {
+        title: t('trainerLesson3Title'),
+        focus: t('trainerLesson3Focus'),
+        points: [t('trainerLesson3Point1'), t('trainerLesson3Point2'), t('trainerLesson3Point3')],
+      },
+      {
+        title: t('trainerLesson4Title'),
+        focus: t('trainerLesson4Focus'),
+        points: [t('trainerLesson4Point1'), t('trainerLesson4Point2'), t('trainerLesson4Point3')],
+      },
+      {
+        title: t('trainerLesson5Title'),
+        focus: t('trainerLesson5Focus'),
+        points: [t('trainerLesson5Point1'), t('trainerLesson5Point2'), t('trainerLesson5Point3')],
+      },
+    ];
+  }
+
+  function trainerPieceName(pieceChar) {
+    const piece = String(pieceChar || '').toLowerCase();
+    if (piece === 'k') return t('trainerPieceKing');
+    if (piece === 'q') return t('trainerPieceQueen');
+    if (piece === 'r') return t('trainerPieceRook');
+    if (piece === 'b') return t('trainerPieceBishop');
+    if (piece === 'n') return t('trainerPieceKnight');
+    return t('trainerPiecePawn');
+  }
+
+  function currentTrainerLessonIndex() {
+    if (state.mode !== 'training') return state.trainerLesson;
+    const moveCountNow = state.game?.moves?.length || 0;
+    if (moveCountNow < 8) return 0;
+    if (moveCountNow < 16) return 1;
+    if (moveCountNow < 28) return 2;
+    if (moveCountNow < 40) return 3;
+    return 4;
+  }
+
+  function trainingMoveFeedback(lastMove) {
+    if (!lastMove) return t('trainerMoveQuiet');
+    if (lastMove.isCheck) return t('trainerMoveCheck');
+    if (lastMove.isCapture) return t('trainerMoveCapture');
+    const to = String(lastMove.to || '');
+    if (to === 'd4' || to === 'e4' || to === 'd5' || to === 'e5') return t('trainerMoveCenter');
+    const from = String(lastMove.from || '');
+    if ((from === 'e1' && (to === 'g1' || to === 'c1')) || (from === 'e8' && (to === 'g8' || to === 'c8'))) {
+      return t('trainerMoveCastle');
+    }
+    return t('trainerMoveQuiet');
   }
 
   function applyTranslations() {
@@ -554,6 +799,82 @@
     return `${min}:${sec}`;
   }
 
+  function initialTimerMs(mode) {
+    if (mode === 'blitz') return 5 * 60 * 1000;
+    if (mode === 'rapid') return 10 * 60 * 1000;
+    return 0;
+  }
+
+  function formatEval(score) {
+    const clamped = Math.max(-999999, Math.min(999999, Number(score) || 0));
+    if (Math.abs(clamped) >= 999000) return clamped > 0 ? 'M#' : 'M#';
+    const pawns = clamped / 100;
+    return `${pawns > 0 ? '+' : ''}${pawns.toFixed(1)}`;
+  }
+
+  async function updateEvaluation() {
+    if (!state.game?.fen) return;
+    try {
+      const res = await fetch('/api/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fen: state.game.fen }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        state.evalScore = Number(data.score) || 0;
+        renderEvalBar();
+        if (state.summaryOpen) renderSummary();
+      }
+    } catch (_) {
+      // no-op
+    }
+  }
+
+  function renderEvalBar() {
+    const score = Math.max(-1200, Math.min(1200, Number(state.evalScore) || 0));
+    const whiteShare = 50 + (score / 1200) * 35;
+    const blackHeight = Math.max(0, Math.min(100, 100 - whiteShare));
+    if (evalFill) evalFill.style.height = `${blackHeight}%`;
+    if (evalLabel) evalLabel.textContent = formatEval(state.evalScore);
+  }
+
+  function openSummary() {
+    state.summaryOpen = true;
+    if (summaryModal) {
+      summaryModal.classList.remove('hidden');
+      summaryModal.setAttribute('aria-hidden', 'false');
+    }
+    renderSummary();
+  }
+
+  function closeSummary() {
+    state.summaryOpen = false;
+    if (summaryModal) {
+      summaryModal.classList.add('hidden');
+      summaryModal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function renderSummary() {
+    const result = getResultStatus();
+    if (!state.game || !result) return;
+    const mode = state.game.timerMode || 'rapid';
+    const initial = initialTimerMs(mode);
+    const whiteUsed = initial ? initial - (state.game.whiteTimeMs || 0) : 0;
+    const blackUsed = initial ? initial - (state.game.blackTimeMs || 0) : 0;
+
+    if (summaryTitle) summaryTitle.textContent = t('summaryGame');
+    if (summaryResult) summaryResult.textContent = result;
+    if (summaryMoves) summaryMoves.textContent = String(state.game.moves?.length || 0);
+    if (summaryOpening) summaryOpening.textContent = state.game.openingName || t('summaryUnknownOpening');
+    if (summaryWhiteTime) summaryWhiteTime.textContent = mode === 'none' ? '--:--' : formatMs(whiteUsed);
+    if (summaryBlackTime) summaryBlackTime.textContent = mode === 'none' ? '--:--' : formatMs(blackUsed);
+    if (summaryEval) summaryEval.textContent = formatEval(state.evalScore);
+    if (summaryCloseBtn) summaryCloseBtn.textContent = t('summaryClose');
+    if (summaryRematchBtn) summaryRematchBtn.textContent = t('summaryRematch');
+  }
+
   function playTone(freq, ms) {
     if (!soundToggle?.checked) return;
     try {
@@ -638,6 +959,62 @@
     return '';
   }
 
+  function trainerCoachMessage() {
+    if (!state.game) return t('trainerWaiting');
+
+    const result = getResultStatus();
+    if (result) return t('trainerCoachEnd', { result });
+    if (state.game.inCheck) return t('trainerCoachCheck');
+
+    if (state.selected) {
+      const piece = pieceAtSquare(state.selected);
+      if (piece) {
+        return t('trainerCoachSelected', {
+          piece: trainerPieceName(piece),
+          square: state.selected,
+          count: state.legalTargets.length,
+        });
+      }
+    }
+
+    const lastMove = state.game.lastMove;
+    if (lastMove?.isCapture) return t('trainerCoachCapture');
+    if (lastMove?.from && lastMove?.to) return t('trainerCoachLastMove', { from: lastMove.from, to: lastMove.to });
+    if ((state.game.moves || []).length < 8) return t('trainerCoachOpening');
+    if (state.mode === 'training') return t('trainerCoachTraining');
+    if (state.mode === 'ai-vs-ai') return t('trainerCoachAiBattle');
+    if (state.mode === 'ai') return t('trainerCoachVsAi');
+
+    return t('trainerCoachTurn', {
+      color: state.game.turn === 'w' ? localizedColor('white') : localizedColor('black'),
+    });
+  }
+
+  function renderTrainer() {
+    const lessons = trainerLessons();
+    const total = lessons.length;
+    const index = Math.max(0, Math.min(currentTrainerLessonIndex(), total - 1));
+    state.trainerLesson = index;
+    const lesson = lessons[index];
+
+    if (trainerLessonCount) {
+      trainerLessonCount.textContent = t('trainerLessonCount', { current: index + 1, total });
+    }
+    if (trainerLessonTitle) trainerLessonTitle.textContent = lesson.title;
+    if (trainerLessonFocus) trainerLessonFocus.textContent = lesson.focus;
+    if (trainerLessonPoints) {
+      trainerLessonPoints.innerHTML = '';
+      lesson.points.forEach((point) => {
+        const li = document.createElement('li');
+        li.textContent = point;
+        trainerLessonPoints.appendChild(li);
+      });
+    }
+    if (trainerCoachText) trainerCoachText.textContent = trainerCoachMessage();
+    if (trainerPrevBtn) trainerPrevBtn.disabled = index === 0;
+    if (trainerNextBtn) trainerNextBtn.disabled = index === total - 1;
+  }
+
   function buildStatus() {
     if (!state.game) return t('initializing');
     const result = getResultStatus();
@@ -652,7 +1029,9 @@
   }
 
   function modeLabel() {
+    if (state.mode === 'training') return t('trainingModeShort');
     if (state.mode === 'ai') return t('vsAi');
+    if (state.mode === 'ai-vs-ai') return t('aiBattle');
     if (state.mode === 'online') return t('onlineRoomShort');
     return t('localMatch');
   }
@@ -716,16 +1095,20 @@
 
   function isHumanTurn() {
     if (!state.game) return false;
+    if (state.mode === 'ai-vs-ai') return false;
     if (state.mode === 'ai') return state.game.turn === (state.aiColor === 'white' ? 'w' : 'b');
     return true;
   }
 
   function aiSide() {
+    if (state.mode === 'ai-vs-ai') return state.game?.turn === 'w' ? 'white' : 'black';
     return state.aiColor === 'white' ? 'black' : 'white';
   }
 
   function shouldAiMove() {
-    if (state.mode !== 'ai' || !state.game || state.game.isGameOver) return false;
+    if (!state.game || state.game.isGameOver) return false;
+    if (state.mode === 'ai-vs-ai') return true;
+    if (state.mode !== 'ai') return false;
     return state.game.turn === (state.aiColor === 'white' ? 'b' : 'w');
   }
 
@@ -756,6 +1139,7 @@
     refreshBadges();
     statusText.textContent = buildStatus();
     render();
+    updateEvaluation();
   }
 
   async function ensureLocalRoom() {
@@ -827,6 +1211,10 @@
     state.redoMoves = [];
     applyServerState(res.state);
     const lm = state.game?.lastMove || {};
+    if (state.mode === 'training') {
+      state.lastInfo = trainingMoveFeedback(lm);
+      render();
+    }
     if (lm.isCheckmate) playTone(260, 280);
     else if (lm.isCapture) playTone(420, 130);
     else if (lm.isCheck) playTone(770, 160);
@@ -882,24 +1270,33 @@
     render();
 
     try {
-      const res = await fetch('/api/ai-move', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fen: state.game.fen, depth: Number(aiDepthEl.value) }),
-      });
-      const data = await res.json();
-      if (res.ok && data.ok && data.move) {
+      while (shouldAiMove()) {
+        const res = await fetch('/api/ai-move', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fen: state.game.fen, depth: Number(aiDepthEl.value) }),
+        });
+        const data = await res.json();
+        if (!(res.ok && data.ok && data.move)) break;
+
         const out = await window.Multiplayer.sendMoveAs(
           { from: data.move.from, to: data.move.to, promotion: data.move.promotion || undefined },
           aiSide(),
         );
-        if (out?.ok) applyServerState(out.state);
+        if (!out?.ok) break;
+
+        applyServerState(out.state);
+        if (state.mode !== 'ai-vs-ai') break;
+        await new Promise((resolve) => window.setTimeout(resolve, 250));
       }
     } catch (err) {
       state.lastInfo = t('aiRequestFailed');
     }
 
     state.aiThinking = false;
+    if (!getResultStatus() && state.lastInfo === t('aiThinking')) {
+      state.lastInfo = '';
+    }
     render();
   }
 
@@ -920,6 +1317,8 @@
     state.forcedResult = '';
     state.redoMoves = [];
     state.lastInfo = '';
+    state.lastSummaryResult = '';
+    closeSummary();
     applyServerState(res.state);
     if (shouldAiMove()) {
       await runAiTurn();
@@ -938,7 +1337,12 @@
     }
 
     state.lastInfo = t('fenLoaded');
+    state.lastSummaryResult = '';
+    closeSummary();
     applyServerState(res.state);
+    if (shouldAiMove()) {
+      await runAiTurn();
+    }
   }
 
   async function exportPgn() {
@@ -1188,6 +1592,14 @@
     statusText.textContent = buildStatus();
     updateTimerUI();
     refreshBadges();
+    renderTrainer();
+    renderEvalBar();
+
+    const result = getResultStatus();
+    if (result && state.lastSummaryResult !== result) {
+      state.lastSummaryResult = result;
+      openSummary();
+    }
   }
 
   function tickLocalClock() {
@@ -1242,6 +1654,24 @@
   drawBtn.addEventListener('click', offerDraw);
   resignBtn.addEventListener('click', resignGame);
   applyMoveBtn.addEventListener('click', applyTypedMove);
+  summaryCloseBtn?.addEventListener('click', closeSummary);
+  summaryRematchBtn?.addEventListener('click', async () => {
+    closeSummary();
+    await restartGame();
+  });
+  summaryModal?.addEventListener('click', (e) => {
+    if (e.target === summaryModal || e.target.classList.contains('summary-backdrop')) {
+      closeSummary();
+    }
+  });
+  trainerPrevBtn?.addEventListener('click', () => {
+    state.trainerLesson = Math.max(0, state.trainerLesson - 1);
+    renderTrainer();
+  });
+  trainerNextBtn?.addEventListener('click', () => {
+    state.trainerLesson = Math.min(trainerLessons().length - 1, state.trainerLesson + 1);
+    renderTrainer();
+  });
   moveInput.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') await applyTypedMove();
   });
