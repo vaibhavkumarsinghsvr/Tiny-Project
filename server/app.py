@@ -1,5 +1,9 @@
 ﻿from __future__ import annotations
 
+from gevent import monkey
+
+monkey.patch_all()
+
 import os
 import threading
 import time
@@ -21,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 CLIENT_DIR = os.path.join(BASE_DIR, "client")
 
 app = Flask(__name__, static_folder=CLIENT_DIR, static_url_path="")
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 rooms = RoomManager()
 
 
