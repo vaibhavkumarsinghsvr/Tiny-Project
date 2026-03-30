@@ -177,6 +177,10 @@
     hintMove: null,
     puzzleIndex: 0,
     puzzleSolved: false,
+    legalMovesRequestId: 0,
+    legalMovesLoadingFor: null,
+    lastEvaluatedFen: '',
+    evaluationRequestId: 0,
   };
 
   const THEME_KEY = 'chess-arena-theme';
@@ -1141,14 +1145,21 @@
 
   async function updateEvaluation() {
     if (!state.game?.fen) return;
+    if (state.game.fen === state.lastEvaluatedFen) return;
+
+    const requestId = state.evaluationRequestId + 1;
+    state.evaluationRequestId = requestId;
+    const fen = state.game.fen;
     try {
       const res = await fetch('/api/evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fen: state.game.fen }),
+        body: JSON.stringify({ fen }),
       });
       const data = await res.json();
+      if (requestId !== state.evaluationRequestId || fen !== state.game?.fen) return;
       if (res.ok && data.ok) {
+        state.lastEvaluatedFen = fen;
         state.evalScore = Number(data.score) || 0;
         renderEvalBar();
         if (state.summaryOpen) renderSummary();
@@ -1479,20 +1490,35 @@
     return Boolean(getResultStatus()) || state.aiThinking;
   }
 
+  function isOwnTurnPiece(piece) {
+    if (!piece || !state.game) return false;
+    return (state.game.turn === 'w' && /[A-Z]/.test(piece)) || (state.game.turn === 'b' && /[a-z]/.test(piece));
+  }
+
   function applyServerState(serverState) {
     if (!serverState) return;
+    const previousFen = state.game?.fen || '';
+    const previousMoveCount = state.game?.moves?.length || 0;
+    const nextFen = serverState.fen || '';
+    const nextMoveCount = serverState.moves?.length || 0;
+    const positionChanged = previousFen !== nextFen || previousMoveCount !== nextMoveCount;
+
     state.game = serverState;
     state.localTickAt = Date.now();
     state.activeRoomCode = serverState.roomCode || state.activeRoomCode;
-    state.selected = null;
-    state.legalTargets = [];
-    state.hintMove = null;
+    if (positionChanged) {
+      state.selected = null;
+      state.legalTargets = [];
+      state.legalMovesLoadingFor = null;
+      state.legalMovesRequestId += 1;
+      state.hintMove = null;
+    }
     updateHistory();
     updateTimerUI();
     refreshBadges();
     statusText.textContent = buildStatus();
     render();
-    updateEvaluation();
+    if (positionChanged) updateEvaluation();
   }
 
   async function ensureLocalRoom() {
@@ -1521,10 +1547,27 @@
     return true;
   }
 
-  async function requestLegalMoves(square) {
+  async function requestLegalMoves(square, requestId = state.legalMovesRequestId) {
     const out = await window.Multiplayer.requestLegalMoves(square);
+    if (requestId !== state.legalMovesRequestId || state.selected !== square) return null;
     if (!out?.ok) return [];
     return (out.moves || []).map((m) => ({ to: m.to, isCapture: Boolean(m.isCapture) }));
+  }
+
+  async function selectSquare(square) {
+    state.selected = square;
+    state.legalTargets = [];
+    state.legalMovesLoadingFor = square;
+    state.legalMovesRequestId += 1;
+    const requestId = state.legalMovesRequestId;
+    render();
+
+    const moves = await requestLegalMoves(square, requestId);
+    if (moves === null || state.selected !== square) return;
+
+    state.legalTargets = moves;
+    state.legalMovesLoadingFor = null;
+    render();
   }
 
   async function requestHint() {
@@ -1659,34 +1702,46 @@
     const row = 8 - Number(square[1]);
     const col = FILES.indexOf(square[0]);
     const piece = row >= 0 && col >= 0 ? boardData[row][col] : null;
-    const turnIsWhite = state.game.turn === 'w';
 
     if (!state.selected) {
-      if (piece && ((turnIsWhite && /[A-Z]/.test(piece)) || (!turnIsWhite && /[a-z]/.test(piece)))) {
-        state.selected = square;
-        state.legalTargets = await requestLegalMoves(square);
-        render();
+      if (isOwnTurnPiece(piece)) {
+        await selectSquare(square);
       }
       return;
     }
 
     if (state.selected === square) {
+      state.legalMovesRequestId += 1;
       state.selected = null;
       state.legalTargets = [];
+      state.legalMovesLoadingFor = null;
       render();
+      return;
+    }
+
+    if (isOwnTurnPiece(piece)) {
+      await selectSquare(square);
       return;
     }
 
     if (legalTargetSquares().includes(square)) {
       const from = state.selected;
+      state.legalMovesRequestId += 1;
       state.selected = null;
       state.legalTargets = [];
+      state.legalMovesLoadingFor = null;
       await attemptMove(from, square);
       return;
     }
 
+    if (state.legalMovesLoadingFor === state.selected) {
+      return;
+    }
+
+    state.legalMovesRequestId += 1;
     state.selected = null;
     state.legalTargets = [];
+    state.legalMovesLoadingFor = null;
     render();
   }
 
@@ -2010,13 +2065,13 @@
           p.addEventListener('dragstart', async (e) => {
             if (isGameLocked()) return;
             e.dataTransfer.setData('text/plain', square);
-            state.selected = square;
-            state.legalTargets = await requestLegalMoves(square);
-            render();
+            await selectSquare(square);
           });
           p.addEventListener('dragend', () => {
+            state.legalMovesRequestId += 1;
             state.selected = null;
             state.legalTargets = [];
+            state.legalMovesLoadingFor = null;
             render();
           });
           sq.appendChild(p);
@@ -2045,6 +2100,7 @@
 
   function tickLocalClock() {
     if (!state.game) return;
+    if (state.mode === 'online') return;
     if (state.game.timerMode === 'none') return;
     if (state.game.isGameOver) return;
     if (state.forcedResult || state.resignedBy) return;
