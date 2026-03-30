@@ -76,12 +76,17 @@
 
       <section class="control-strip">
         <div class="panel control-panel">
-          <div class="panel-title" data-i18n="matchSetup">Match Setup</div>
+          <div class="panel-head">
+            <div class="panel-title" data-i18n="matchSetup">Match Setup</div>
+            <button id="setupToggleBtn" class="button-secondary mobile-setup-toggle" type="button" data-i18n="setupHide">Hide Setup</button>
+          </div>
+          <div id="controlPanelContent" class="control-panel-content">
           <div class="control-grid">
             <label><span data-i18n="mode">Mode</span>
               <select id="modeSelect">
                 <option value="local" data-i18n="modeLocal">Player vs Player (Local)</option>
                 <option value="training" data-i18n="modeTraining">Training Mode</option>
+                <option value="puzzle" data-i18n="modePuzzle">Puzzle Mode</option>
                 <option value="ai" data-i18n="modeAi">Player vs AI</option>
                 <option value="ai-vs-ai" data-i18n="modeAiVsAi">AI vs AI</option>
                 <option value="online" data-i18n="modeOnline">Online Multiplayer</option>
@@ -93,6 +98,7 @@
                 <option value="2">2</option>
                 <option value="3" selected>3</option>
                 <option value="4">4</option>
+                <option value="5">5</option>
               </select>
             </label>
             <label><span data-i18n="yourColor">Your Color</span>
@@ -111,6 +117,7 @@
             <label><span data-i18n="timer">Timer</span>
               <select id="timerMode">
                 <option value="none" data-i18n="timerNone">No Timer</option>
+                <option value="bullet" data-i18n="timerBullet">Bullet (1+0)</option>
                 <option value="blitz" data-i18n="timerBlitz">Blitz (5+0)</option>
                 <option value="rapid" selected data-i18n="timerRapid">Rapid (10+0)</option>
               </select>
@@ -124,6 +131,8 @@
           </div>
           <div class="button-row">
             <button id="restartBtn" data-i18n="restart">Restart</button>
+            <button id="hintBtn" class="button-secondary" data-i18n="hint">Hint</button>
+            <button id="flipBoardBtn" class="button-secondary" data-i18n="flipBoard">Flip Board</button>
             <button id="undoBtn" class="button-secondary" data-i18n="undo">Undo</button>
             <button id="redoBtn" class="button-secondary" data-i18n="redo">Redo</button>
             <button id="drawBtn" class="button-secondary" data-i18n="offerDraw">Offer Draw</button>
@@ -136,6 +145,7 @@
               <span data-i18n="moveSound">Move Sound</span>
             </label>
             <div class="control-hint" data-i18n="controlHint">Use `Ctrl/Cmd + Z`, `Y`, and `R` for quick actions.</div>
+          </div>
           </div>
         </div>
 
@@ -160,6 +170,7 @@
               <div class="player-role" data-i18n="upperBoard">Upper Board</div>
               <div id="blackTimer" class="player-clock">10:00</div>
             </div>
+            <div id="blackCaptured" class="captured-strip"></div>
           </div>
 
           <div class="board-shell">
@@ -207,6 +218,7 @@
               <div class="player-role" data-i18n="lowerBoard">Lower Board</div>
               <div id="whiteTimer" class="player-clock">10:00</div>
             </div>
+            <div id="whiteCaptured" class="captured-strip"></div>
           </div>
         </section>
 
@@ -232,6 +244,28 @@
               <div class="panel-note" data-i18n="moveHistoryNote">PGN-ready notation</div>
             </div>
             <ol id="historyList" class="history"></ol>
+          </section>
+
+          <section class="panel recent-games-panel">
+            <div class="panel-head">
+              <div class="panel-title" data-i18n="recentGames">Recent Games</div>
+              <div class="panel-note" data-i18n="recentGamesNote">Saved in this browser for quick review</div>
+            </div>
+            <div id="recentGamesList" class="recent-games-list"></div>
+          </section>
+
+          <section id="puzzlePanel" class="panel puzzle-panel">
+            <div class="panel-head">
+              <div class="panel-title" data-i18n="puzzleTitle">Puzzle Mode</div>
+              <div id="puzzleProgress" class="panel-note">Puzzle 1 / 10</div>
+            </div>
+            <div id="puzzlePrompt" class="guide-section-title">Mate in 1</div>
+            <div id="puzzleDescription" class="trainer-focus">Find the winning move for the side to move.</div>
+            <div id="puzzleFeedback" class="recent-game-meta"></div>
+            <div class="button-row">
+              <button id="puzzleRetryBtn" class="button-secondary" type="button" data-i18n="puzzleRetry">Retry</button>
+              <button id="puzzleNextBtn" type="button" data-i18n="puzzleNext">Next Puzzle</button>
+            </div>
           </section>
 
           <section class="panel pgn-panel">

@@ -17,6 +17,8 @@ class Room:
     game: GameState
     white_sid: Optional[str] = None
     black_sid: Optional[str] = None
+    white_player_id: Optional[str] = None
+    black_player_id: Optional[str] = None
     spectators: Set[str] = field(default_factory=set)
 
 
@@ -29,29 +31,45 @@ class RoomManager:
         chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         return "".join(random.choice(chars) for _ in range(6))
 
-    def create_room(self, host_sid: str, timer_mode: str = "rapid") -> Room:
+    def create_room(self, host_sid: str, host_player_id: str, timer_mode: str = "rapid") -> Room:
         with self._lock:
             code = self._generate_code()
             while code in self._rooms:
                 code = self._generate_code()
-            room = Room(code=code, game=create_game(timer_mode), white_sid=host_sid)
+            room = Room(
+                code=code,
+                game=create_game(timer_mode),
+                white_sid=host_sid,
+                white_player_id=host_player_id,
+            )
             self._rooms[code] = room
             return room
 
     def get_room(self, code: str) -> Optional[Room]:
         return self._rooms.get((code or "").upper())
 
-    def join_room(self, code: str, sid: str) -> tuple[Optional[Room], str]:
+    def join_room(self, code: str, sid: str, player_id: str) -> tuple[Optional[Room], str]:
         with self._lock:
             room = self.get_room(code)
             if not room:
                 return None, ""
 
+            if room.white_player_id == player_id:
+                room.white_sid = sid
+                room.spectators.discard(sid)
+                return room, "white"
+            if room.black_player_id == player_id:
+                room.black_sid = sid
+                room.spectators.discard(sid)
+                return room, "black"
+
             if room.white_sid is None:
                 room.white_sid = sid
+                room.white_player_id = player_id
                 return room, "white"
             if room.black_sid is None:
                 room.black_sid = sid
+                room.black_player_id = player_id
                 return room, "black"
 
             room.spectators.add(sid)

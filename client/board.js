@@ -41,6 +41,20 @@
   const summaryWhiteTime = document.getElementById('summaryWhiteTime');
   const summaryBlackTime = document.getElementById('summaryBlackTime');
   const summaryEval = document.getElementById('summaryEval');
+  const setupToggleBtn = document.getElementById('setupToggleBtn');
+  const controlPanelContent = document.getElementById('controlPanelContent');
+  const hintBtn = document.getElementById('hintBtn');
+  const flipBoardBtn = document.getElementById('flipBoardBtn');
+  const whiteCaptured = document.getElementById('whiteCaptured');
+  const blackCaptured = document.getElementById('blackCaptured');
+  const recentGamesList = document.getElementById('recentGamesList');
+  const puzzlePanel = document.getElementById('puzzlePanel');
+  const puzzleProgress = document.getElementById('puzzleProgress');
+  const puzzlePrompt = document.getElementById('puzzlePrompt');
+  const puzzleDescription = document.getElementById('puzzleDescription');
+  const puzzleFeedback = document.getElementById('puzzleFeedback');
+  const puzzleRetryBtn = document.getElementById('puzzleRetryBtn');
+  const puzzleNextBtn = document.getElementById('puzzleNextBtn');
 
   const restartBtn = document.getElementById('restartBtn');
   const exportPgnBtn = document.getElementById('exportPgnBtn');
@@ -71,6 +85,69 @@
     n: './assets/pieces/bn.svg',
     p: './assets/pieces/bp.svg',
   };
+  const PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9 };
+  const PUZZLES = [
+    {
+      fen: '3Q4/8/8/8/8/7K/8/7k w - - 0 1',
+      solution: 'd8d1',
+      promptKey: 'puzzleMateInOne',
+      description: 'White to move and finish the game immediately.',
+    },
+    {
+      fen: '8/3Q4/8/8/8/K7/8/1k6 w - - 0 1',
+      solution: 'd7d1',
+      promptKey: 'puzzleMateInOne',
+      description: 'A clean queen finish from long range.',
+    },
+    {
+      fen: '8/5Q2/7k/5K2/8/8/8/8 w - - 0 1',
+      solution: 'f7g6',
+      promptKey: 'puzzleMateInOne',
+      description: 'Use the queen and king together to trap the black king.',
+    },
+    {
+      fen: '8/8/1Q6/8/8/1K6/8/1k6 w - - 0 1',
+      solution: 'b6g1',
+      promptKey: 'puzzleMateInOne',
+      description: 'Spot the diagonal mate from the corner.',
+    },
+    {
+      fen: '6k1/8/6K1/8/8/3Q4/8/8 w - - 0 1',
+      solution: 'd3d8',
+      promptKey: 'puzzleMateInOne',
+      description: 'The queen cuts off every escape square.',
+    },
+    {
+      fen: '8/8/8/k1K5/3Q4/8/8/8 w - - 0 1',
+      solution: 'd4a1',
+      promptKey: 'puzzleMateInOne',
+      description: 'A quiet-looking move that is actually mate.',
+    },
+    {
+      fen: '2k5/8/3K4/8/8/8/Q7/8 w - - 0 1',
+      solution: 'a2a8',
+      promptKey: 'puzzleMateInOne',
+      description: 'Line up the queen on the back rank for mate.',
+    },
+    {
+      fen: '1k6/8/1K6/8/8/8/4Q3/8 w - - 0 1',
+      solution: 'e2e8',
+      promptKey: 'puzzleMateInOne',
+      description: 'A direct queen lift seals the king in.',
+    },
+    {
+      fen: '2k5/8/3K4/8/8/8/6Q1/8 w - - 0 1',
+      solution: 'g2a8',
+      promptKey: 'puzzleMateInOne',
+      description: 'Find the long diagonal to the mating square.',
+    },
+    {
+      fen: '8/2K5/k7/8/8/8/5Q2/8 w - - 0 1',
+      solution: 'f2b6',
+      promptKey: 'puzzleMateInOne',
+      description: 'The final puzzle rewards precise diagonal vision.',
+    },
+  ];
 
   const state = {
     mode: 'local',
@@ -94,11 +171,18 @@
     evalScore: 0,
     summaryOpen: false,
     lastSummaryResult: '',
+    setupCollapsed: false,
+    compactViewport: false,
+    boardFlipped: false,
+    hintMove: null,
+    puzzleIndex: 0,
+    puzzleSolved: false,
   };
 
   const THEME_KEY = 'chess-arena-theme';
   const LANG_KEY = 'chess-arena-language';
   const VISUAL_MODE_KEY = 'chess-arena-visual-mode';
+  const RECENT_GAMES_KEY = 'chess-arena-recent-games';
   const translations = {
     en: {
       heroEyebrow: 'Strategic Match Room',
@@ -116,8 +200,11 @@
       theme: 'Theme',
       visualMode: 'Visual Mode',
       matchSetup: 'Match Setup',
+      setupShow: 'Show Setup',
+      setupHide: 'Hide Setup',
       modeLocal: 'Player vs Player (Local)',
       modeTraining: 'Training Mode',
+      modePuzzle: 'Puzzle Mode',
       modeAi: 'Player vs AI',
       modeAiVsAi: 'AI vs AI',
       modeOnline: 'Online Multiplayer',
@@ -128,10 +215,13 @@
       visualPersian: 'Persian',
       timer: 'Timer',
       timerNone: 'No Timer',
+      timerBullet: 'Bullet (1+0)',
       timerBlitz: 'Blitz (5+0)',
       timerRapid: 'Rapid (10+0)',
       timerFormat: 'Timer Format',
       restart: 'Restart',
+      hint: 'Hint',
+      flipBoard: 'Flip Board',
       undo: 'Undo',
       redo: 'Redo',
       offerDraw: 'Offer Draw',
@@ -168,6 +258,20 @@
       applyMove: 'Apply Move',
       moveHistory: 'Move History',
       moveHistoryNote: 'PGN-ready notation',
+      recentGames: 'Recent Games',
+      recentGamesNote: 'Saved in this browser for quick review',
+      recentGamesEmpty: 'Your last finished games will appear here.',
+      recentGameMoves: '{count} moves',
+      recentGameOpening: 'Opening: {name}',
+      puzzleTitle: 'Puzzle Mode',
+      puzzleMateInOne: 'Mate in 1',
+      puzzleDescriptionDefault: 'Find the winning move for the side to move.',
+      puzzleRetry: 'Retry',
+      puzzleNext: 'Next Puzzle',
+      puzzleProgressLabel: 'Puzzle {current} / {total}',
+      puzzleSolvedStatus: 'Puzzle solved. Great finish.',
+      puzzleCorrect: 'Correct. You found the winning move.',
+      puzzleWrong: 'Not the puzzle move. Try again.',
       pgnNote: 'Export or review the full line',
       rulesGuideTitle: 'Rules & Notation',
       rulesGuideNote: 'Quick reference for piece names, legal moves, and standard notation',
@@ -271,6 +375,7 @@
       initializing: 'Initializing...',
       localMatch: 'Local Match',
       trainingModeShort: 'Training',
+      puzzleModeShort: 'Puzzle',
       vsAi: 'Vs AI',
       aiBattle: 'AI Battle',
       onlineRoomShort: 'Online Room',
@@ -282,10 +387,14 @@
       unableInitializeLocalBoard: 'Unable to initialize local board',
       invalidMove: 'Invalid move',
       aiThinking: 'AI thinking...',
+      hintReady: 'Hint ready: best move highlighted on the board.',
+      hintUnavailable: 'No hint available for this position.',
       aiRequestFailed: 'AI request failed',
       restartFailed: 'Restart failed',
       invalidFen: 'Invalid FEN',
       fenLoaded: 'FEN loaded',
+      boardFlippedState: 'Board flipped.',
+      boardResetState: 'Board returned to default view.',
       exportPgnFailed: 'Failed to export PGN',
       exportPgnSuccess: 'PGN exported (copied/downloaded where permitted).',
       undoDisabledOnline: 'Undo disabled in online mode.',
@@ -335,6 +444,7 @@
       matchSetup: 'मैच सेटअप',
       modeLocal: 'प्लेयर बनाम प्लेयर (लोकल)',
       modeTraining: 'ट्रेनिंग मोड',
+      modePuzzle: 'पज़ल मोड',
       modeAi: 'प्लेयर बनाम AI',
       modeAiVsAi: 'AI बनाम AI',
       modeOnline: 'ऑनलाइन मल्टीप्लेयर',
@@ -345,10 +455,13 @@
       visualPersian: 'फ़ारसी',
       timer: 'टाइमर',
       timerNone: 'कोई टाइमर नहीं',
+      timerBullet: 'बुलेट (1+0)',
       timerBlitz: 'ब्लिट्ज (5+0)',
       timerRapid: 'रैपिड (10+0)',
       timerFormat: 'टाइमर प्रारूप',
       restart: 'रीस्टार्ट',
+      hint: 'संकेत',
+      flipBoard: 'बोर्ड पलटें',
       undo: 'अनडू',
       redo: 'रीडू',
       offerDraw: 'ड्रॉ ऑफर',
@@ -385,7 +498,23 @@
       applyMove: 'मूव लागू करें',
       moveHistory: 'मूव हिस्ट्री',
       moveHistoryNote: 'PGN के लिए तैयार नोटेशन',
+      recentGames: 'हाल की गेम्स',
+      recentGamesNote: 'इस ब्राउज़र में तेज़ रिव्यू के लिए सेव',
+      recentGamesEmpty: 'आपकी हाल की समाप्त गेम्स यहाँ दिखेंगी।',
+      recentGameMoves: '{count} चालें',
+      recentGameOpening: 'ओपनिंग: {name}',
+      puzzleTitle: 'पज़ल मोड',
+      puzzleMateInOne: 'एक चाल में मात',
+      puzzleDescriptionDefault: 'जिस पक्ष की चाल है उसके लिए जीतने वाली चाल खोजें।',
+      puzzleRetry: 'फिर से',
+      puzzleNext: 'अगला पज़ल',
+      puzzleProgressLabel: 'पज़ल {current} / {total}',
+      puzzleSolvedStatus: 'पज़ल हल हो गया। शानदार।',
+      puzzleCorrect: 'सही। आपने जीतने वाली चाल ढूँढ ली।',
+      puzzleWrong: 'यह पज़ल चाल नहीं है। फिर कोशिश करें।',
       pgnNote: 'पूरी लाइन देखें या एक्सपोर्ट करें',
+      setupShow: 'सेटअप दिखाएं',
+      setupHide: 'सेटअप छुपाएं',
       rulesGuideTitle: 'नियम और नोटेशन',
       rulesGuideNote: 'पीस के नाम, चाल के नियम और मानक नोटेशन के लिए त्वरित संदर्भ',
       rulesBasicsTitle: 'खेल का उद्देश्य',
@@ -425,6 +554,7 @@
       initializing: 'शुरू हो रहा है...',
       localMatch: 'लोकल मैच',
       trainingModeShort: 'ट्रेनिंग',
+      puzzleModeShort: 'पज़ल',
       vsAi: 'AI के खिलाफ',
       aiBattle: 'AI मुकाबला',
       onlineRoomShort: 'ऑनलाइन रूम',
@@ -436,10 +566,14 @@
       unableInitializeLocalBoard: 'लोकल बोर्ड शुरू नहीं हो पाया',
       invalidMove: 'अमान्य चाल',
       aiThinking: 'AI सोच रहा है...',
+      hintReady: 'संकेत तैयार है: सबसे अच्छी चाल बोर्ड पर दिखाई गई है।',
+      hintUnavailable: 'इस स्थिति के लिए संकेत उपलब्ध नहीं है।',
       aiRequestFailed: 'AI अनुरोध असफल रहा',
       restartFailed: 'रीस्टार्ट असफल रहा',
       invalidFen: 'अमान्य FEN',
       fenLoaded: 'FEN लोड हो गया',
+      boardFlippedState: 'बोर्ड पलट दिया गया है।',
+      boardResetState: 'बोर्ड सामान्य दृश्य में लौट आया है।',
       exportPgnFailed: 'PGN एक्सपोर्ट नहीं हो पाया',
       exportPgnSuccess: 'PGN एक्सपोर्ट हो गया है।',
       undoDisabledOnline: 'ऑनलाइन मोड में अनडू उपलब्ध नहीं है।',
@@ -489,6 +623,7 @@
       matchSetup: 'Configuración de partida',
       modeLocal: 'Jugador vs Jugador (Local)',
       modeTraining: 'Modo entrenamiento',
+      modePuzzle: 'Modo rompecabezas',
       modeAi: 'Jugador vs IA',
       modeAiVsAi: 'IA vs IA',
       modeOnline: 'Multijugador en línea',
@@ -499,10 +634,13 @@
       visualPersian: 'Persa',
       timer: 'Temporizador',
       timerNone: 'Sin temporizador',
+      timerBullet: 'Bala (1+0)',
       timerBlitz: 'Blitz (5+0)',
       timerRapid: 'Rapid (10+0)',
       timerFormat: 'Formato de tiempo',
       restart: 'Reiniciar',
+      hint: 'Pista',
+      flipBoard: 'Girar tablero',
       undo: 'Deshacer',
       redo: 'Rehacer',
       offerDraw: 'Ofrecer tablas',
@@ -539,8 +677,24 @@
       applyMove: 'Aplicar movimiento',
       moveHistory: 'Historial de movimientos',
       moveHistoryNote: 'Notación lista para PGN',
+      recentGames: 'Partidas recientes',
+      recentGamesNote: 'Guardadas en este navegador para revisión rápida',
+      recentGamesEmpty: 'Tus últimas partidas terminadas aparecerán aquí.',
+      recentGameMoves: '{count} movimientos',
+      recentGameOpening: 'Apertura: {name}',
+      puzzleTitle: 'Modo rompecabezas',
+      puzzleMateInOne: 'Mate en 1',
+      puzzleDescriptionDefault: 'Encuentra la jugada ganadora para el bando al mover.',
+      puzzleRetry: 'Reintentar',
+      puzzleNext: 'Siguiente',
+      puzzleProgressLabel: 'Rompecabezas {current} / {total}',
+      puzzleSolvedStatus: 'Rompecabezas resuelto. Muy bien.',
+      puzzleCorrect: 'Correcto. Encontraste la jugada ganadora.',
+      puzzleWrong: 'No es la jugada del rompecabezas. Intenta otra vez.',
       pgnNote: 'Exporta o revisa la línea completa',
       rulesGuideTitle: 'Reglas y notación',
+      setupShow: 'Mostrar ajustes',
+      setupHide: 'Ocultar ajustes',
       rulesGuideNote: 'Referencia rápida sobre nombres de piezas, movimientos legales y notación estándar',
       rulesBasicsTitle: 'Objetivo del juego',
       rulesBasics1: 'Haz jaque mate al rey rival: atácalo de forma que no quede ninguna salida legal.',
@@ -579,6 +733,7 @@
       initializing: 'Iniciando...',
       localMatch: 'Partida local',
       trainingModeShort: 'Entrenamiento',
+      puzzleModeShort: 'Rompecabezas',
       vsAi: 'Vs IA',
       aiBattle: 'Duelo IA',
       onlineRoomShort: 'Sala en línea',
@@ -590,10 +745,14 @@
       unableInitializeLocalBoard: 'No se pudo iniciar el tablero local',
       invalidMove: 'Movimiento no válido',
       aiThinking: 'La IA está pensando...',
+      hintReady: 'Pista lista: la mejor jugada está resaltada en el tablero.',
+      hintUnavailable: 'No hay pista disponible para esta posición.',
       aiRequestFailed: 'La solicitud de IA falló',
       restartFailed: 'No se pudo reiniciar',
       invalidFen: 'FEN no válido',
       fenLoaded: 'FEN cargado',
+      boardFlippedState: 'Tablero girado.',
+      boardResetState: 'Tablero restaurado a la vista normal.',
       exportPgnFailed: 'No se pudo exportar el PGN',
       exportPgnSuccess: 'PGN exportado.',
       undoDisabledOnline: 'Deshacer no está disponible en modo en línea.',
@@ -682,6 +841,10 @@
     return t('trainerPiecePawn');
   }
 
+  function currentPuzzle() {
+    return PUZZLES[state.puzzleIndex] || PUZZLES[0];
+  }
+
   function currentTrainerLessonIndex() {
     if (state.mode !== 'training') return state.trainerLesson;
     const moveCountNow = state.game?.moves?.length || 0;
@@ -723,6 +886,33 @@
     Array.from(languageSelect?.options || []).forEach((option) => {
       option.textContent = languageOptions[option.value] || option.textContent;
     });
+
+    renderSetupToggle();
+  }
+
+  function isCompactViewport() {
+    return Boolean(window.matchMedia && window.matchMedia('(max-width: 640px)').matches);
+  }
+
+  function renderSetupToggle() {
+    if (!setupToggleBtn || !controlPanelContent) return;
+    const collapsed = Boolean(state.setupCollapsed && isCompactViewport());
+    controlPanelContent.classList.toggle('is-collapsed', collapsed);
+    const key = collapsed ? 'setupShow' : 'setupHide';
+    setupToggleBtn.dataset.i18n = key;
+    setupToggleBtn.textContent = t(key);
+    setupToggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  }
+
+  function syncMobileLayout(force = false) {
+    const compact = isCompactViewport();
+    if (!compact) {
+      state.setupCollapsed = false;
+    } else if (force || !state.compactViewport) {
+      state.setupCollapsed = true;
+    }
+    state.compactViewport = compact;
+    renderSetupToggle();
   }
 
   function getPreferredLanguage() {
@@ -800,9 +990,146 @@
   }
 
   function initialTimerMs(mode) {
+    if (mode === 'bullet') return 1 * 60 * 1000;
     if (mode === 'blitz') return 5 * 60 * 1000;
     if (mode === 'rapid') return 10 * 60 * 1000;
     return 0;
+  }
+
+  function pieceCountsFromFen(fen) {
+    const counts = {
+      white: { p: 0, n: 0, b: 0, r: 0, q: 0 },
+      black: { p: 0, n: 0, b: 0, r: 0, q: 0 },
+    };
+    const boardPart = String(fen || '').split(' ')[0] || '';
+    for (const ch of boardPart) {
+      const lower = ch.toLowerCase();
+      if (!(lower in counts.white)) continue;
+      if (ch === lower) counts.black[lower] += 1;
+      else counts.white[lower] += 1;
+    }
+    return counts;
+  }
+
+  function capturedPiecesFromFen(fen) {
+    const counts = pieceCountsFromFen(fen);
+    const starting = { p: 8, n: 2, b: 2, r: 2, q: 1 };
+    const whiteCapturedPieces = [];
+    const blackCapturedPieces = [];
+    let whiteMaterial = 0;
+    let blackMaterial = 0;
+
+    Object.keys(starting).forEach((piece) => {
+      const whiteMissing = starting[piece] - counts.white[piece];
+      const blackMissing = starting[piece] - counts.black[piece];
+      for (let i = 0; i < whiteMissing; i += 1) {
+        whiteCapturedPieces.push(piece);
+        whiteMaterial += PIECE_VALUES[piece] || 0;
+      }
+      for (let i = 0; i < blackMissing; i += 1) {
+        blackCapturedPieces.push(piece);
+        blackMaterial += PIECE_VALUES[piece] || 0;
+      }
+    });
+
+    return {
+      whiteCapturedPieces,
+      blackCapturedPieces,
+      whiteMaterial,
+      blackMaterial,
+    };
+  }
+
+  function renderCapturedPieces() {
+    if (!whiteCaptured || !blackCaptured || !state.game?.fen) return;
+    const { whiteCapturedPieces, blackCapturedPieces, whiteMaterial, blackMaterial } = capturedPiecesFromFen(state.game.fen);
+
+    const renderStrip = (target, pieces, color, diff) => {
+      target.innerHTML = '';
+      pieces.forEach((piece) => {
+        const img = document.createElement('img');
+        img.className = 'captured-piece';
+        img.src = PIECE_ASSETS[`${color === 'white' ? piece.toUpperCase() : piece}`];
+        img.alt = `${color} captured ${piece}`;
+        target.appendChild(img);
+      });
+      if (diff > 0) {
+        const badge = document.createElement('span');
+        badge.className = 'material-badge';
+        badge.textContent = `+${diff}`;
+        target.appendChild(badge);
+      }
+    };
+
+    renderStrip(whiteCaptured, blackCapturedPieces, 'black', blackMaterial - whiteMaterial);
+    renderStrip(blackCaptured, whiteCapturedPieces, 'white', whiteMaterial - blackMaterial);
+  }
+
+  function getRecentGames() {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(RECENT_GAMES_KEY) || '[]');
+      return Array.isArray(stored) ? stored : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveRecentGames(games) {
+    try {
+      window.localStorage.setItem(RECENT_GAMES_KEY, JSON.stringify(games.slice(0, 10)));
+    } catch (_) {
+      // ignore storage issues
+    }
+  }
+
+  function renderRecentGames() {
+    if (!recentGamesList) return;
+    const games = getRecentGames();
+    recentGamesList.innerHTML = '';
+    if (!games.length) {
+      const empty = document.createElement('div');
+      empty.className = 'recent-game-empty';
+      empty.textContent = t('recentGamesEmpty');
+      recentGamesList.appendChild(empty);
+      return;
+    }
+
+    games.forEach((game) => {
+      const item = document.createElement('div');
+      item.className = 'recent-game-item';
+      const top = document.createElement('div');
+      top.className = 'recent-game-top';
+      const result = document.createElement('div');
+      result.className = 'recent-game-result';
+      result.textContent = game.result || '-';
+      const when = document.createElement('div');
+      when.className = 'recent-game-meta';
+      when.textContent = game.when || '';
+      top.append(result, when);
+
+      const meta = document.createElement('div');
+      meta.className = 'recent-game-meta';
+      meta.textContent = `${t('recentGameMoves', { count: game.moves || 0 })} | ${t('recentGameOpening', { name: game.opening || t('summaryUnknownOpening') })}`;
+      item.append(top, meta);
+      recentGamesList.appendChild(item);
+    });
+  }
+
+  function saveFinishedGame(result) {
+    if (!state.game || !result || state.mode === 'online' || state.mode === 'puzzle') return;
+    const games = getRecentGames();
+    const entry = {
+      result,
+      moves: state.game.moves?.length || 0,
+      opening: state.game.openingName || t('summaryUnknownOpening'),
+      when: new Date().toLocaleString(),
+      fen: state.game.fen,
+    };
+    const duplicate = games[0] && games[0].result === entry.result && games[0].moves === entry.moves && games[0].fen === entry.fen;
+    if (duplicate) return;
+    games.unshift(entry);
+    saveRecentGames(games);
+    renderRecentGames();
   }
 
   function formatEval(score) {
@@ -1015,8 +1342,29 @@
     if (trainerNextBtn) trainerNextBtn.disabled = index === total - 1;
   }
 
+  function renderPuzzlePanel() {
+    if (!puzzlePanel) return;
+    const active = state.mode === 'puzzle';
+    puzzlePanel.style.display = active ? 'grid' : 'none';
+    if (!active) return;
+
+    const puzzle = currentPuzzle();
+    if (puzzleProgress) {
+      puzzleProgress.textContent = t('puzzleProgressLabel', { current: state.puzzleIndex + 1, total: PUZZLES.length });
+    }
+    if (puzzlePrompt) puzzlePrompt.textContent = t(puzzle.promptKey || 'puzzleMateInOne');
+    if (puzzleDescription) puzzleDescription.textContent = puzzle.description || t('puzzleDescriptionDefault');
+    if (puzzleFeedback) puzzleFeedback.textContent = state.lastInfo || t('puzzleDescriptionDefault');
+    if (puzzleRetryBtn) puzzleRetryBtn.disabled = !state.game;
+    if (puzzleNextBtn) puzzleNextBtn.disabled = !state.puzzleSolved;
+  }
+
   function buildStatus() {
     if (!state.game) return t('initializing');
+    if (state.mode === 'puzzle') {
+      if (state.puzzleSolved) return t('puzzleSolvedStatus');
+      if (state.lastInfo) return state.lastInfo;
+    }
     const result = getResultStatus();
     if (result) return result;
 
@@ -1030,6 +1378,7 @@
 
   function modeLabel() {
     if (state.mode === 'training') return t('trainingModeShort');
+    if (state.mode === 'puzzle') return t('puzzleModeShort');
     if (state.mode === 'ai') return t('vsAi');
     if (state.mode === 'ai-vs-ai') return t('aiBattle');
     if (state.mode === 'online') return t('onlineRoomShort');
@@ -1113,8 +1462,11 @@
   }
 
   function boardPerspective() {
-    if (state.mode === 'ai' && state.aiColor === 'black') return 'black';
-    return 'white';
+    let perspective = 'white';
+    if (state.mode === 'ai' && state.aiColor === 'black') perspective = 'black';
+    if (state.mode === 'puzzle' && state.game?.turn === 'b') perspective = 'black';
+    if (state.boardFlipped) perspective = perspective === 'white' ? 'black' : 'white';
+    return perspective;
   }
 
   function isMyTurnOnline() {
@@ -1134,6 +1486,7 @@
     state.activeRoomCode = serverState.roomCode || state.activeRoomCode;
     state.selected = null;
     state.legalTargets = [];
+    state.hintMove = null;
     updateHistory();
     updateTimerUI();
     refreshBadges();
@@ -1174,6 +1527,59 @@
     return (out.moves || []).map((m) => ({ to: m.to, isCapture: Boolean(m.isCapture) }));
   }
 
+  async function requestHint() {
+    if (!state.game || state.aiThinking || getResultStatus()) return;
+    state.lastInfo = t('aiThinking');
+    render();
+    try {
+      const res = await fetch('/api/ai-move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fen: state.game.fen, depth: Math.max(2, Number(aiDepthEl.value) || 2) }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok && data.move) {
+        state.hintMove = { from: data.move.from, to: data.move.to };
+        state.lastInfo = t('hintReady');
+      } else {
+        state.hintMove = null;
+        state.lastInfo = t('hintUnavailable');
+      }
+    } catch (_) {
+      state.hintMove = null;
+      state.lastInfo = t('hintUnavailable');
+    }
+    render();
+  }
+
+  async function loadPuzzle(index = state.puzzleIndex) {
+    state.puzzleIndex = ((index % PUZZLES.length) + PUZZLES.length) % PUZZLES.length;
+    state.puzzleSolved = false;
+    state.hintMove = null;
+    const puzzle = currentPuzzle();
+
+    const restarted = await window.Multiplayer.requestRestart('none');
+    if (!restarted?.ok) {
+      state.lastInfo = restarted?.error || t('restartFailed');
+      render();
+      return false;
+    }
+    applyServerState(restarted.state);
+
+    const loaded = await window.Multiplayer.requestFenLoad(puzzle.fen);
+    if (!loaded?.ok) {
+      state.lastInfo = loaded?.error || t('invalidFen');
+      render();
+      return false;
+    }
+    state.lastSummaryResult = '';
+    closeSummary();
+    state.lastInfo = '';
+    applyServerState(loaded.state);
+    renderPuzzlePanel();
+    return true;
+  }
+
   function legalTargetSquares() {
     return state.legalTargets.map((m) => m.to);
   }
@@ -1181,6 +1587,19 @@
   async function attemptMove(from, to, forcedPromotion = null) {
     if (!state.game || !from || !to) return;
     if (!isMyTurnOnline() || !isHumanTurn() || isGameLocked()) return;
+    state.hintMove = null;
+
+    const proposedUci = `${from}${to}${forcedPromotion || ''}`;
+    if (state.mode === 'puzzle') {
+      const solution = currentPuzzle().solution;
+      if (proposedUci !== solution) {
+        playTone(240, 180);
+        await loadPuzzle(state.puzzleIndex);
+        state.lastInfo = t('puzzleWrong');
+        render();
+        return;
+      }
+    }
 
     const move = { from, to };
     if (forcedPromotion) {
@@ -1211,6 +1630,13 @@
     state.redoMoves = [];
     applyServerState(res.state);
     const lm = state.game?.lastMove || {};
+    if (state.mode === 'puzzle') {
+      state.puzzleSolved = true;
+      state.lastInfo = t('puzzleCorrect');
+      render();
+      playTone(720, 180);
+      return;
+    }
     if (state.mode === 'training') {
       state.lastInfo = trainingMoveFeedback(lm);
       render();
@@ -1227,6 +1653,7 @@
 
   async function handleSquareClick(square) {
     if (!state.game || !isMyTurnOnline() || !isHumanTurn() || isGameLocked()) return;
+    state.hintMove = null;
 
     const boardData = parseFenBoard(state.game.fen);
     const row = 8 - Number(square[1]);
@@ -1320,12 +1747,20 @@
     state.lastSummaryResult = '';
     closeSummary();
     applyServerState(res.state);
+    if (state.mode === 'puzzle') {
+      await loadPuzzle(state.puzzleIndex);
+      return;
+    }
     if (shouldAiMove()) {
       await runAiTurn();
     }
   }
 
   async function loadFen() {
+    if (state.mode === 'puzzle') {
+      state.mode = 'local';
+      modeSelect.value = 'local';
+    }
     const fen = document.getElementById('fenInput').value.trim();
     if (!fen) return;
 
@@ -1538,6 +1973,8 @@
         if (state.selected === square) sq.classList.add('selected');
         if (state.game?.lastMove?.from === square) sq.classList.add('last-from');
         if (state.game?.lastMove?.to === square) sq.classList.add('last-to');
+        if (state.hintMove?.from === square) sq.classList.add('hint-from');
+        if (state.hintMove?.to === square) sq.classList.add('hint-to');
         const legal = state.legalTargets.find((m) => m.to === square);
         if (legal) sq.classList.add(legal.isCapture ? 'legal-capture' : 'legal');
         if (state.game?.checkedKingSquare === square) sq.classList.add('king-check');
@@ -1594,10 +2031,14 @@
     refreshBadges();
     renderTrainer();
     renderEvalBar();
+    renderCapturedPieces();
+    renderRecentGames();
+    renderPuzzlePanel();
 
     const result = getResultStatus();
-    if (result && state.lastSummaryResult !== result) {
+    if (state.mode !== 'puzzle' && result && state.lastSummaryResult !== result) {
       state.lastSummaryResult = result;
+      saveFinishedGame(result);
       openSummary();
     }
   }
@@ -1623,7 +2064,9 @@
 
   modeSelect.addEventListener('change', async () => {
     state.mode = modeSelect.value;
+    state.puzzleSolved = false;
     onlineControls.style.display = state.mode === 'online' ? 'flex' : 'none';
+    if (state.mode === 'puzzle') timerModeEl.value = 'none';
     refreshBadges();
 
     if (state.mode !== 'online') {
@@ -1645,6 +2088,18 @@
   visualModeSelect?.addEventListener('change', () => applyVisualMode(visualModeSelect.value));
 
   restartBtn.addEventListener('click', restartGame);
+  hintBtn?.addEventListener('click', requestHint);
+  flipBoardBtn?.addEventListener('click', () => {
+    state.boardFlipped = !state.boardFlipped;
+    state.lastInfo = state.boardFlipped ? t('boardFlippedState') : t('boardResetState');
+    render();
+  });
+  puzzleRetryBtn?.addEventListener('click', async () => {
+    await loadPuzzle(state.puzzleIndex);
+  });
+  puzzleNextBtn?.addEventListener('click', async () => {
+    await loadPuzzle(state.puzzleIndex + 1);
+  });
   exportPgnBtn.addEventListener('click', exportPgn);
   loadFenBtn.addEventListener('click', loadFen);
   createRoomBtn.addEventListener('click', handleCreateRoom);
@@ -1671,6 +2126,10 @@
   trainerNextBtn?.addEventListener('click', () => {
     state.trainerLesson = Math.min(trainerLessons().length - 1, state.trainerLesson + 1);
     renderTrainer();
+  });
+  setupToggleBtn?.addEventListener('click', () => {
+    state.setupCollapsed = !state.setupCollapsed;
+    renderSetupToggle();
   });
   moveInput.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') await applyTypedMove();
@@ -1707,6 +2166,7 @@
   timeFormatEl?.addEventListener('change', () => render());
   themeToggle?.addEventListener('change', () => applyTheme(themeToggle.checked ? 'dark' : 'light'));
   languageSelect?.addEventListener('change', () => applyLanguage(languageSelect.value));
+  window.addEventListener('resize', () => syncMobileLayout());
 
   window.Multiplayer.onState((serverState) => {
     if (!serverState) return;
@@ -1727,6 +2187,8 @@
     applyLanguage(getPreferredLanguage());
     applyVisualMode(getPreferredVisualMode());
     applyTheme(getPreferredTheme());
+    syncMobileLayout(true);
+    renderRecentGames();
     if (playerColorEl) playerColorEl.value = state.aiColor;
     onlineControls.style.display = 'none';
     updateRoomInfo();

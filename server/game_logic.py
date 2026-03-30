@@ -21,13 +21,15 @@ class GameState:
 def _initial_timer_ms(mode: str) -> int:
     if mode == "none":
         return 0
+    if mode == "bullet":
+        return 1 * 60 * 1000
     return 5 * 60 * 1000 if mode == "blitz" else 10 * 60 * 1000
 
 
 def create_game(timer_mode: str = "rapid") -> GameState:
     ms = _initial_timer_ms(timer_mode)
     return GameState(
-        timer_mode=timer_mode if timer_mode in {"none", "blitz", "rapid"} else "rapid",
+        timer_mode=timer_mode if timer_mode in {"none", "bullet", "blitz", "rapid"} else "rapid",
         white_time_ms=ms,
         black_time_ms=ms,
     )
@@ -186,7 +188,7 @@ def validate_and_apply_move(game: GameState, move_payload: Dict[str, Any]) -> Di
 
 
 def restart_game(game: GameState, timer_mode: Optional[str]) -> Dict[str, Any]:
-    mode = timer_mode if timer_mode in {"none", "blitz", "rapid"} else game.timer_mode
+    mode = timer_mode if timer_mode in {"none", "bullet", "blitz", "rapid"} else game.timer_mode
     fresh = create_game(mode)
     game.board = fresh.board
     game.timer_mode = fresh.timer_mode

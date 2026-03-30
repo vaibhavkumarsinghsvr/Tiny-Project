@@ -7,6 +7,20 @@
   let currentRoomCode = null;
   let myColor = null;
   let lastConnectError = null;
+  const PLAYER_ID_KEY = 'chess-arena-player-id';
+
+  function ensurePlayerId() {
+    try {
+      const existing = window.localStorage.getItem(PLAYER_ID_KEY);
+      if (existing) return existing;
+
+      const generated = (window.crypto?.randomUUID?.() || `player-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
+      window.localStorage.setItem(PLAYER_ID_KEY, generated);
+      return generated;
+    } catch (_) {
+      return `player-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+  }
 
   socket.on('connect_error', (err) => {
     lastConnectError = err?.message || 'Socket connection error';
@@ -38,9 +52,10 @@
   function createRoom(timerMode) {
     const conn = ensureConnected();
     if (!conn.ok) return Promise.resolve(conn);
+    const playerId = ensurePlayerId();
 
     return withTimeout((done) => {
-      socket.emit('room:create', { timerMode }, (res) => {
+      socket.emit('room:create', { timerMode, playerId }, (res) => {
         if (!res?.ok) return done({ ok: false, error: res?.error || 'Failed to create room' });
         currentRoomCode = res.roomCode;
         myColor = res.color;
@@ -52,9 +67,10 @@
   function joinRoom(roomCode) {
     const conn = ensureConnected();
     if (!conn.ok) return Promise.resolve(conn);
+    const playerId = ensurePlayerId();
 
     return withTimeout((done) => {
-      socket.emit('room:join', { roomCode }, (res) => {
+      socket.emit('room:join', { roomCode, playerId }, (res) => {
         if (!res?.ok) return done({ ok: false, error: res?.error || 'Join failed' });
         currentRoomCode = res.roomCode;
         myColor = res.color;

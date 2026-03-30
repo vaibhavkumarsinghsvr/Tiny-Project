@@ -7,18 +7,34 @@ monkey.patch_all()
 import os
 import threading
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Mapping, cast
 
 from flask import Flask, jsonify, request, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
 
-try:
+if __package__:
     from .ai_engine import best_move_from_fen, evaluation_from_fen
-    from .game_logic import apply_timer_tick, export_pgn, legal_moves, load_fen, restart_game, serialize_state, validate_and_apply_move
+    from .game_logic import (
+        apply_timer_tick,
+        export_pgn,
+        legal_moves,
+        load_fen,
+        restart_game,
+        serialize_state,
+        validate_and_apply_move,
+    )
     from .rooms import RoomManager
-except ImportError:
+else:
     from ai_engine import best_move_from_fen, evaluation_from_fen
-    from game_logic import apply_timer_tick, export_pgn, legal_moves, load_fen, restart_game, serialize_state, validate_and_apply_move
+    from game_logic import (
+        apply_timer_tick,
+        export_pgn,
+        legal_moves,
+        load_fen,
+        restart_game,
+        serialize_state,
+        validate_and_apply_move,
+    )
     from rooms import RoomManager
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -27,6 +43,19 @@ CLIENT_DIR = os.path.join(BASE_DIR, "client")
 app = Flask(__name__, static_folder=CLIENT_DIR, static_url_path="")
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 rooms = RoomManager()
+
+
+def _socket_sid() -> str:
+    return cast(str, getattr(request, "sid"))
+
+
+def _player_id_from(payload: Mapping[str, Any]) -> str:
+    raw = str(payload.get("playerId", "")).strip()
+    return raw or _socket_sid()
+
+
+def _emit_to_room(event: str, payload: Mapping[str, Any], room_code: str) -> None:
+    cast(Any, socketio.emit)(event, dict(payload), room=room_code)
 
 
 @app.get("/api/health")
@@ -72,8 +101,9 @@ def on_connect() -> None:
 
 @socketio.on("room:create")
 def room_create(data: Dict[str, Any]) -> Dict[str, Any]:
-    timer_mode = (data or {}).get("timerMode", "rapid")
-    room = rooms.create_room(request.sid, timer_mode)
+    payload: Mapping[str, Any] = data or {}
+    timer_mode = str(payload.get("timerMode", "rapid"))
+    room = rooms.create_room(_socket_sid(), _player_id_from(payload), timer_mode)
     join_room(room.code)
     state = serialize_state(room.game)
     state["roomCode"] = room.code
@@ -82,19 +112,20 @@ def room_create(data: Dict[str, Any]) -> Dict[str, Any]:
 
 @socketio.on("room:join")
 def room_join(data: Dict[str, Any]) -> Dict[str, Any]:
-    room_code = str((data or {}).get("roomCode", "")).upper()
-    room, color = rooms.join_room(room_code, request.sid)
+    payload: Mapping[str, Any] = data or {}
+    room_code = str(payload.get("roomCode", "")).upper()
+    room, color = rooms.join_room(room_code, _socket_sid(), _player_id_from(payload))
     if not room:
         return {"ok": False, "error": "Room not found"}
 
     join_room(room.code)
-    socketio.emit(
+    _emit_to_room(
         "room:update",
         {
             "whiteConnected": bool(room.white_sid),
             "blackConnected": bool(room.black_sid),
         },
-        room=room.code,
+        room.code,
     )
     state = serialize_state(room.game)
     state["roomCode"] = room.code
@@ -103,8 +134,9 @@ def room_join(data: Dict[str, Any]) -> Dict[str, Any]:
 
 @socketio.on("game:legalMoves")
 def game_legal_moves(data: Dict[str, Any]) -> Dict[str, Any]:
-    room_code = str((data or {}).get("roomCode", "")).upper()
-    square = str((data or {}).get("square", "")).lower()
+    payload: Mapping[str, Any] = data or {}
+    room_code = str(payload.get("roomCode", "")).upper()
+    square = str(payload.get("square", "")).lower()
     room = rooms.get_room(room_code)
     if not room:
         return {"ok": False, "error": "Room not found"}
@@ -114,7 +146,7 @@ def game_legal_moves(data: Dict[str, Any]) -> Dict[str, Any]:
 
 @socketio.on("game:move")
 def game_move(data: Dict[str, Any]) -> Dict[str, Any]:
-    payload = data or {}
+    payload: Mapping[str, Any] = data or {}
     room_code = str(payload.get("roomCode", "")).upper()
     requested_color = str(payload.get("color", ""))
     move = payload.get("move", {})
@@ -123,8 +155,9 @@ def game_move(data: Dict[str, Any]) -> Dict[str, Any]:
     if not room:
         return {"ok": False, "error": "Room not found"}
 
-    is_white = room.white_sid == request.sid
-    is_black = room.black_sid == request.sid
+    sid = _socket_sid()
+    is_white = room.white_sid == sid
+    is_black = room.black_sid == sid
     if (requested_color == "white" and not is_white) or (requested_color == "black" and not is_black):
         return {"ok": False, "error": "Not your side"}
 
@@ -138,14 +171,15 @@ def game_move(data: Dict[str, Any]) -> Dict[str, Any]:
 
     payload = dict(out["state"])
     payload["roomCode"] = room.code
-    socketio.emit("game:state", payload, room=room.code)
+    _emit_to_room("game:state", payload, room.code)
     return {"ok": True, "state": payload}
 
 
 @socketio.on("game:restart")
 def game_restart(data: Dict[str, Any]) -> Dict[str, Any]:
-    room_code = str((data or {}).get("roomCode", "")).upper()
-    timer_mode = (data or {}).get("timerMode")
+    payload: Mapping[str, Any] = data or {}
+    room_code = str(payload.get("roomCode", "")).upper()
+    timer_mode = payload.get("timerMode")
     room = rooms.get_room(room_code)
     if not room:
         return {"ok": False, "error": "Room not found"}
@@ -153,14 +187,15 @@ def game_restart(data: Dict[str, Any]) -> Dict[str, Any]:
     state = restart_game(room.game, timer_mode)
     payload = dict(state)
     payload["roomCode"] = room.code
-    socketio.emit("game:state", payload, room=room.code)
+    _emit_to_room("game:state", payload, room.code)
     return {"ok": True, "state": payload}
 
 
 @socketio.on("game:loadFen")
 def game_load_fen(data: Dict[str, Any]) -> Dict[str, Any]:
-    room_code = str((data or {}).get("roomCode", "")).upper()
-    fen = str((data or {}).get("fen", ""))
+    payload: Mapping[str, Any] = data or {}
+    room_code = str(payload.get("roomCode", "")).upper()
+    fen = str(payload.get("fen", ""))
     room = rooms.get_room(room_code)
     if not room:
         return {"ok": False, "error": "Room not found"}
@@ -171,13 +206,14 @@ def game_load_fen(data: Dict[str, Any]) -> Dict[str, Any]:
 
     payload = dict(out["state"])
     payload["roomCode"] = room.code
-    socketio.emit("game:state", payload, room=room.code)
+    _emit_to_room("game:state", payload, room.code)
     return {"ok": True, "state": payload}
 
 
 @socketio.on("game:exportPgn")
 def game_export_pgn(data: Dict[str, Any]) -> Dict[str, Any]:
-    room_code = str((data or {}).get("roomCode", "")).upper()
+    payload: Mapping[str, Any] = data or {}
+    room_code = str(payload.get("roomCode", "")).upper()
     room = rooms.get_room(room_code)
     if not room:
         return {"ok": False, "error": "Room not found"}
@@ -187,7 +223,7 @@ def game_export_pgn(data: Dict[str, Any]) -> Dict[str, Any]:
 
 @socketio.on("disconnect")
 def on_disconnect() -> None:
-    rooms.remove_sid(request.sid)
+    rooms.remove_sid(_socket_sid())
 
 
 def _timer_loop() -> None:
@@ -200,7 +236,7 @@ def _timer_loop() -> None:
             if prev_w != room.game.white_time_ms or prev_b != room.game.black_time_ms:
                 payload = serialize_state(room.game)
                 payload["roomCode"] = code
-                socketio.emit("game:state", payload, room=code)
+                _emit_to_room("game:state", payload, code)
 
 
 threading.Thread(target=_timer_loop, daemon=True).start()
